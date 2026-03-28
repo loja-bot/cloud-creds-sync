@@ -26,12 +26,15 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 async function adminApi(action: string, body?: Record<string, unknown>) {
   const url = `${SUPABASE_URL}/functions/v1/admin-api?action=${action}`;
+  // Use user's auth token for admin check, anon key for other actions
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || SUPABASE_KEY;
   const res = await fetch(url, {
     method: body ? "POST" : "GET",
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Authorization": `Bearer ${token}`,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -91,6 +94,10 @@ const AdminPanel: React.FC = () => {
   const [banReason, setBanReason] = useState("");
   const [showBanModal, setShowBanModal] = useState(false);
 
+  // Admin protection
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -126,6 +133,25 @@ const AdminPanel: React.FC = () => {
       }
     } catch {}
   }, []);
+
+  // Admin check
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
+      try {
+        const res = await adminApi("check_admin");
+        setIsAdmin(!!res.is_admin);
+      } catch {
+        setIsAdmin(false);
+      }
+      setAuthChecking(false);
+    };
+    checkAdmin();
+  }, [navigate]);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
@@ -193,6 +219,30 @@ const AdminPanel: React.FC = () => {
     try { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
     catch { return d; }
   };
+
+  // Admin protection gates
+  if (authChecking) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <ShieldX className="w-16 h-16 text-destructive mx-auto" />
+          <h1 className="font-display text-xl font-bold text-destructive tracking-wider">ACESSO NEGADO</h1>
+          <p className="text-muted-foreground text-sm">Você não tem permissão para acessar o painel admin.</p>
+          <button onClick={() => navigate("/")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+            Voltar ao Início
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

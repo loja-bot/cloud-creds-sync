@@ -94,6 +94,25 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // --- CHECK ADMIN ---
+    if (action === "check_admin") {
+      // Get the caller's JWT to identify who is calling
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ is_admin: false }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Check admin_emails setting
+      const { data: setting } = await supabase.from("app_settings").select("value").eq("key", "admin_emails").maybeSingle();
+      const adminEmails: string[] = setting?.value ? (Array.isArray(setting.value) ? setting.value : []) : [];
+      
+      // Get user from token
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      const isAdmin = user?.email ? adminEmails.includes(user.email) : false;
+      
+      return new Response(JSON.stringify({ is_admin: isAdmin }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // --- UPDATE HOST ---
     if (action === "update_host") {
       const { host } = await req.json();
