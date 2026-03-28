@@ -131,6 +131,25 @@ const AdminPanel: React.FC = () => {
     } catch {}
   }, []);
 
+  // Admin check
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
+      try {
+        const res = await adminApi("check_admin");
+        setIsAdmin(!!res.is_admin);
+      } catch {
+        setIsAdmin(false);
+      }
+      setAuthChecking(false);
+    };
+    checkAdmin();
+  }, [navigate]);
+
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   const handleBan = async () => {
