@@ -73,6 +73,58 @@ const AdminPanel: React.FC = () => {
   const [actionLoading, setActionLoading] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
+  // Admin protection
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/");
+        return;
+      }
+      // Check if user has admin role via admin-api
+      try {
+        const res = await adminApi("check_admin");
+        if (res.is_admin) {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch {
+        setIsAdmin(false);
+      }
+      setAuthChecking(false);
+    };
+    checkAdmin();
+  }, [navigate]);
+
+  // Show loading while checking admin
+  if (authChecking) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  // Not admin - show access denied
+  if (!isAdmin) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <ShieldX className="w-16 h-16 text-destructive mx-auto" />
+          <h1 className="font-display text-xl font-bold text-destructive tracking-wider">ACESSO NEGADO</h1>
+          <p className="text-muted-foreground text-sm">Você não tem permissão para acessar o painel admin.</p>
+          <button onClick={() => navigate("/")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+            Voltar ao Início
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Maintenance state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("Em manutenção");
