@@ -26,12 +26,15 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 async function adminApi(action: string, body?: Record<string, unknown>) {
   const url = `${SUPABASE_URL}/functions/v1/admin-api?action=${action}`;
+  // Use user's auth token for admin check, anon key for other actions
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || SUPABASE_KEY;
   const res = await fetch(url, {
     method: body ? "POST" : "GET",
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Authorization": `Bearer ${token}`,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
