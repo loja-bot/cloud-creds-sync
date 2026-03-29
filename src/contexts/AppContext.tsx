@@ -137,14 +137,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchSettings();
 
-    // Realtime for settings changes
+    // Realtime for settings changes - auto-reload on admin changes
     const channel = supabase
       .channel("settings-changes")
       .on("postgres_changes", {
         event: "*",
         schema: "public",
         table: "app_settings",
-      }, () => {
+      }, (payload) => {
+        const key = (payload.new as any)?.key;
+        // For critical admin changes, force instant reload
+        if (key === "maintenance_mode" || key === "default_host" || key === "admin_emails") {
+          window.location.reload();
+          return;
+        }
         fetchSettings();
       })
       .subscribe();

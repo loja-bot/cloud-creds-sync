@@ -14,6 +14,7 @@ import BannedScreen from "@/components/BannedScreen";
 import AccountExpiredScreen from "@/components/AccountExpiredScreen";
 import { AnimatePresence } from "framer-motion";
 import { Loader2, Tv } from "lucide-react";
+import InstaWatermark from "@/components/InstaWatermark";
 
 const AppContent: React.FC = () => {
   const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage } = useApp();
@@ -85,6 +86,7 @@ const AppContent: React.FC = () => {
           {section === "favorites" && <FavoritesSection key="favorites" />}
         </AnimatePresence>
       </main>
+      <InstaWatermark />
     </div>
   );
 };
