@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { Tv } from "lucide-react";
 import { playSplashSound } from "@/lib/splashSound";
 
@@ -9,33 +9,43 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [show, setShow] = useState(true);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
-    // Play sound
-    playSplashSound();
+    // Try playing sound immediately
+    try { playSplashSound(); } catch {}
 
-    // Fallback interaction listener for autoplay policy
-    const handleInteraction = () => {
-      playSplashSound();
-    };
-    document.addEventListener("click", handleInteraction, { once: true });
-    document.addEventListener("touchstart", handleInteraction, { once: true });
-    document.addEventListener("keydown", handleInteraction, { once: true });
+    // Fallback: retry on any user interaction (autoplay policy)
+    const retry = () => { try { playSplashSound(); } catch {} };
+    document.addEventListener("click", retry, { once: true });
+    document.addEventListener("touchstart", retry, { once: true });
+    document.addEventListener("keydown", retry, { once: true });
 
-    const hideTimer = setTimeout(() => {
-      setShow(false);
-    }, 2800);
+    const hideTimer = setTimeout(() => setShow(false), 2800);
 
+    // Guarantee finish even if React state is weird
     const finishTimer = setTimeout(() => {
-      onFinish();
+      if (!finishedRef.current) {
+        finishedRef.current = true;
+        onFinish();
+      }
     }, 3400);
+
+    // Extra safety net - force finish after 5s no matter what
+    const safetyTimer = setTimeout(() => {
+      if (!finishedRef.current) {
+        finishedRef.current = true;
+        onFinish();
+      }
+    }, 5000);
 
     return () => {
       clearTimeout(hideTimer);
       clearTimeout(finishTimer);
-      document.removeEventListener("click", handleInteraction);
-      document.removeEventListener("touchstart", handleInteraction);
-      document.removeEventListener("keydown", handleInteraction);
+      clearTimeout(safetyTimer);
+      document.removeEventListener("click", retry);
+      document.removeEventListener("touchstart", retry);
+      document.removeEventListener("keydown", retry);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -2,11 +2,13 @@
 // Singleton guard: ensures sound plays exactly once, never overlaps
 
 let hasPlayed = false;
+let isPlaying = false;
 let audioCtx: AudioContext | null = null;
 
 export function playSplashSound() {
-  // Strict single-play guard
-  if (hasPlayed) return;
+  // Guard: never play twice, never overlap
+  if (hasPlayed || isPlaying) return;
+  isPlaying = true;
   hasPlayed = true;
 
   try {
@@ -98,15 +100,18 @@ export function playSplashSound() {
     setTimeout(() => {
       ctx.close();
       audioCtx = null;
+      isPlaying = false;
     }, 3500);
   } catch (e) {
     console.warn("Splash sound failed:", e);
-    hasPlayed = false; // Allow retry on error
+    hasPlayed = false;
+    isPlaying = false;
   }
 }
 
 export function resetSplashSound() {
   hasPlayed = false;
+  isPlaying = false;
   if (audioCtx) {
     try { audioCtx.close(); } catch {}
     audioCtx = null;
