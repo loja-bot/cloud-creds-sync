@@ -9,42 +9,21 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [show, setShow] = useState(true);
-  const soundPlayed = useRef(false);
+  const initiated = useRef(false);
 
   useEffect(() => {
-    // Play sound synchronized with animation start
-    if (!soundPlayed.current) {
-      soundPlayed.current = true;
-      // Small delay to ensure AudioContext can start (user gesture not always needed on load)
-      const soundTimer = setTimeout(() => {
-        playSplashSound();
-      }, 50);
+    if (initiated.current) return;
+    initiated.current = true;
 
-      const hideTimer = setTimeout(() => {
-        setShow(false);
-        setTimeout(onFinish, 600);
-      }, 2800);
+    // Try to play immediately
+    playSplashSound();
 
-      return () => {
-        clearTimeout(soundTimer);
-        clearTimeout(hideTimer);
-      };
-    }
-
-    const timer = setTimeout(() => {
-      setShow(false);
-      setTimeout(onFinish, 600);
-    }, 2800);
-    return () => clearTimeout(timer);
-  }, [onFinish]);
-
-  // Also try to play sound on first user interaction (for browsers that block autoplay)
-  useEffect(() => {
+    // Also try on first user interaction (autoplay policy)
     const handleInteraction = () => {
-      if (!soundPlayed.current) {
-        soundPlayed.current = true;
-        playSplashSound();
-      }
+      playSplashSound();
+      cleanup();
+    };
+    const cleanup = () => {
       document.removeEventListener("click", handleInteraction);
       document.removeEventListener("touchstart", handleInteraction);
       document.removeEventListener("keydown", handleInteraction);
@@ -52,12 +31,17 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
     document.addEventListener("click", handleInteraction, { once: true });
     document.addEventListener("touchstart", handleInteraction, { once: true });
     document.addEventListener("keydown", handleInteraction, { once: true });
+
+    const hideTimer = setTimeout(() => {
+      setShow(false);
+      setTimeout(onFinish, 600);
+    }, 2800);
+
     return () => {
-      document.removeEventListener("click", handleInteraction);
-      document.removeEventListener("touchstart", handleInteraction);
-      document.removeEventListener("keydown", handleInteraction);
+      clearTimeout(hideTimer);
+      cleanup();
     };
-  }, []);
+  }, [onFinish]);
 
   return (
     <AnimatePresence>
@@ -68,7 +52,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
           transition={{ duration: 0.6 }}
           className="fixed inset-0 z-[100] bg-background flex items-center justify-center overflow-hidden"
         >
-          {/* Animated background rings - synced with whoosh sound at 300ms */}
           {[1, 2, 3].map((i) => (
             <motion.div
               key={i}
@@ -80,7 +63,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
           ))}
 
           <div className="relative flex flex-col items-center gap-6">
-            {/* Animated T Logo - synced with bass impact at 0ms */}
             <motion.div
               initial={{ scale: 0, rotateY: -180 }}
               animate={{ scale: 1, rotateY: 0 }}
@@ -107,7 +89,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
               </motion.div>
             </motion.div>
 
-            {/* Text - synced with melodic chime at 800ms */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -117,7 +98,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
               <h1 className="font-display text-3xl font-bold text-primary tracking-[0.3em]">
                 THAYSON TV
               </h1>
-              {/* Subtitle - synced with sparkle at 1.2s */}
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -128,7 +108,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
               </motion.p>
             </motion.div>
 
-            {/* Loading bar - synced with resolution tone at 2s */}
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: "12rem" }}
