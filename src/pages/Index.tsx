@@ -86,6 +86,7 @@ const AppContent: React.FC = () => {
           {section === "favorites" && <FavoritesSection key="favorites" />}
         </AnimatePresence>
       </main>
+      <InstaWatermark />
     </div>
   );
 };
