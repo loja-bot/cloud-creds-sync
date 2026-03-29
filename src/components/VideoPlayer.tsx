@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Maximize, SkipBack, SkipForward, ArrowLeft, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Maximize, SkipBack, SkipForward, ArrowLeft, Volume2, VolumeX, MoreVertical, Share2, ExternalLink, X, Check, Copy } from "lucide-react";
 import mpegts from "mpegts.js";
 import { useApp } from "@/contexts/AppContext";
 import { saveContinueWatching, getContinueWatching } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const VideoPlayer: React.FC = () => {
   const { playerState, closePlayer } = useApp();
@@ -17,6 +19,9 @@ const VideoPlayer: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const controlsTimer = useRef<ReturnType<typeof setTimeout>>();
   const saveTimer = useRef<ReturnType<typeof setInterval>>();
   const resumeTimeRef = useRef<number>(0);
@@ -309,6 +314,48 @@ const VideoPlayer: React.FC = () => {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  // Generate share link
+  const handleShare = async () => {
+    if (!playerState) return;
+    setSharing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Faça login para compartilhar"); return; }
+      
+      const { data, error } = await supabase.from("share_tokens").insert({
+        stream_id: playerState.streamId,
+        stream_type: playerState.type,
+        stream_title: playerState.title,
+        stream_url: playerState.url,
+        created_by: user.id,
+        extension: playerState.extension || "ts",
+        episode_id: playerState.episodeId,
+        season_num: playerState.seasonNum,
+        episode_num: playerState.episodeNum,
+      }).select("token").single();
+
+      if (error) throw error;
+      const url = `${window.location.origin}/share/${data.token}`;
+      setShareUrl(url);
+      setShowMenu(false);
+    } catch (e) {
+      console.error("Share error:", e);
+      toast.error("Erro ao gerar link");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const copyShareUrl = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copiado!");
+    } catch {
+      toast.error("Erro ao copiar");
+    }
+  };
+
   if (!playerState) return null;
 
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -351,6 +398,30 @@ const VideoPlayer: React.FC = () => {
               </button>
               <h2 className="text-foreground font-semibold text-lg truncate">{playerState.title}</h2>
               {isLive && <span className="px-2 py-0.5 rounded bg-destructive text-destructive-foreground text-xs font-bold">AO VIVO</span>}
+              <div className="ml-auto relative">
+                <button data-focusable onClick={() => setShowMenu(!showMenu)} className="tv-focusable w-10 h-10 rounded-full bg-card/60 flex items-center justify-center">
+                  <MoreVertical className="w-5 h-5 text-foreground" />
+                </button>
+                <AnimatePresence>
+                  {showMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="absolute right-0 top-12 bg-card border border-border rounded-xl shadow-xl overflow-hidden min-w-[180px] z-50"
+                    >
+                      <button
+                        onClick={handleShare}
+                        disabled={sharing}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        {sharing ? "Gerando..." : "Compartilhar link"}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Center play */}
@@ -407,6 +478,47 @@ const VideoPlayer: React.FC = () => {
                 </button>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Share URL modal */}
+      <AnimatePresence>
+        {shareUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[60] bg-background/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShareUrl(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-card border border-border rounded-2xl p-5 max-w-sm w-full space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-sm font-bold text-primary tracking-wider">COMPARTILHAR</h3>
+                <button onClick={() => setShareUrl(null)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-muted-foreground text-xs">Link válido por 24h. Quem acessar poderá escolher assistir no navegador ou abrir o app.</p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={shareUrl}
+                  className="flex-1 px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-xs font-mono truncate"
+                />
+                <button
+                  onClick={copyShareUrl}
+                  className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copiar
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -110,6 +110,54 @@ export type Database = {
         }
         Relationships: []
       }
+      share_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          episode_id: number | null
+          episode_num: number | null
+          expires_at: string
+          extension: string | null
+          id: string
+          season_num: number | null
+          stream_id: number
+          stream_title: string
+          stream_type: string
+          stream_url: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          episode_id?: number | null
+          episode_num?: number | null
+          expires_at?: string
+          extension?: string | null
+          id?: string
+          season_num?: number | null
+          stream_id: number
+          stream_title: string
+          stream_type: string
+          stream_url: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          episode_id?: number | null
+          episode_num?: number | null
+          expires_at?: string
+          extension?: string | null
+          id?: string
+          season_num?: number | null
+          stream_id?: number
+          stream_title?: string
+          stream_type?: string
+          stream_url?: string
+          token?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
