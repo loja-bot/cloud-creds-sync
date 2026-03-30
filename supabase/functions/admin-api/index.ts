@@ -124,6 +124,24 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // --- UPDATE BLOCKED CONTENT/CATEGORIES ---
+    if (action === "update_blocked") {
+      const { key, value } = await req.json();
+      if (!key || !["blocked_content", "blocked_categories"].includes(key)) {
+        return new Response(JSON.stringify({ error: "Invalid key" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Upsert the setting
+      const { data: existing } = await supabase.from("app_settings").select("id").eq("key", key).maybeSingle();
+      if (existing) {
+        const { error } = await supabase.from("app_settings").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("app_settings").insert({ key, value, updated_at: new Date().toISOString() });
+        if (error) throw error;
+      }
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
