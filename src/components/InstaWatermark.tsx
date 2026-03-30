@@ -52,7 +52,6 @@ const InstaWatermark: React.FC = () => {
     setConfetti(true);
     setTimeout(() => setFollowGlow(false), 800);
     setTimeout(() => setConfetti(false), 1000);
-    // Redirect to Instagram
     setTimeout(() => {
       window.open(INSTA_URL, "_blank", "noopener,noreferrer");
     }, 500);
@@ -115,7 +114,10 @@ const InstaWatermark: React.FC = () => {
               whileTap={{ scale: 0.8 }}
               className="relative ml-1 p-1 rounded-full hover:bg-muted/50 transition-colors overflow-visible"
             >
-              <motion.div animate={liked ? { scale: [1, 1.4, 1] } : {}} transition={{ duration: 0.4 }}>
+              <motion.div
+                animate={liked ? { scale: [1, 1.6, 1.2, 1.4, 1] } : {}}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
                 <Heart
                   className={`w-3.5 h-3.5 transition-colors duration-300 ${
                     liked ? "text-red-500 fill-red-500" : "text-muted-foreground"
@@ -127,7 +129,7 @@ const InstaWatermark: React.FC = () => {
                 {likeGlow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2, 3] }}
+                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2.5, 3.5] }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.7 }}
                     className="absolute inset-0 rounded-full bg-red-500/30 pointer-events-none"
@@ -138,19 +140,20 @@ const InstaWatermark: React.FC = () => {
               <AnimatePresence>
                 {heartBurst && (
                   <>
-                    {[...Array(6)].map((_, i) => (
+                    {[...Array(8)].map((_, i) => (
                       <motion.div
                         key={i}
                         initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
                         animate={{
-                          scale: [0, 1, 0],
-                          x: Math.cos((i * 60 * Math.PI) / 180) * 16,
-                          y: Math.sin((i * 60 * Math.PI) / 180) * 16,
+                          scale: [0, 1.2, 0],
+                          x: Math.cos((i * 45 * Math.PI) / 180) * 20,
+                          y: Math.sin((i * 45 * Math.PI) / 180) * 20,
                           opacity: [1, 1, 0],
                         }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="absolute top-1/2 left-1/2 w-1 h-1 rounded-full bg-red-500"
+                        className="absolute top-1/2 left-1/2 w-1.5 h-1.5 -ml-[3px] -mt-[3px] rounded-full"
+                        style={{ backgroundColor: i % 2 === 0 ? "#ef4444" : "#fbbf24" }}
                       />
                     ))}
                   </>
@@ -162,7 +165,7 @@ const InstaWatermark: React.FC = () => {
             <motion.button
               ref={followBtnRef}
               onClick={handleFollow}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.85 }}
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1 }}
@@ -173,7 +176,10 @@ const InstaWatermark: React.FC = () => {
               }`}
             >
               <UserPlus className="w-2.5 h-2.5" />
-              <motion.span animate={followed ? { scale: [1, 1.1, 1] } : {}} transition={{ duration: 0.3 }}>
+              <motion.span
+                animate={followed ? { scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 0.3 }}
+              >
                 {followed ? "Seguindo" : "Seguir"}
               </motion.span>
               {/* Follow glow */}
@@ -181,10 +187,10 @@ const InstaWatermark: React.FC = () => {
                 {followGlow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: [0, 0.6, 0], scale: [0.5, 1.8, 2.5] }}
+                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2, 3] }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="absolute inset-0 rounded-md bg-primary/30 pointer-events-none"
+                    className="absolute inset-0 rounded-md bg-primary/40 pointer-events-none"
                   />
                 )}
               </AnimatePresence>
@@ -194,14 +200,14 @@ const InstaWatermark: React.FC = () => {
             <AnimatePresence>
               {confetti && (
                 <>
-                  {[...Array(12)].map((_, i) => (
+                  {[...Array(16)].map((_, i) => (
                     <motion.div
                       key={`confetti-${i}`}
                       initial={{ scale: 0, x: 0, y: 0, opacity: 1, rotate: 0 }}
                       animate={{
                         scale: [0, 1, 0.5],
-                        x: Math.cos((i * 30 * Math.PI) / 180) * (25 + Math.random() * 15),
-                        y: Math.sin((i * 30 * Math.PI) / 180) * (25 + Math.random() * 15) - 10,
+                        x: Math.cos((i * 22.5 * Math.PI) / 180) * (30 + Math.random() * 20),
+                        y: Math.sin((i * 22.5 * Math.PI) / 180) * (30 + Math.random() * 20) - 10,
                         opacity: [1, 1, 0],
                         rotate: Math.random() * 360,
                       }}
@@ -219,17 +225,25 @@ const InstaWatermark: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Hand pointing - animated to follow button position */}
+            {/* Animated hand pointing - targets the follow button precisely */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{
-                opacity: [0, 1, 1, 1, 0],
-                y: [8, 0, 0, -2, -4],
-                x: [0, 0, 0, 0, 0],
+                opacity: [0, 0, 1, 1, 1, 1, 0.8, 0],
+                y: [10, 10, 0, 0, -2, -4, -2, 0],
+                scale: [0.8, 0.8, 1, 1, 0.9, 1.1, 1, 0.8],
               }}
-              transition={{ delay: 2, duration: 2, times: [0, 0.15, 0.5, 0.7, 1] }}
-              className="absolute -bottom-5 right-2 text-sm pointer-events-none"
-              style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
+              transition={{
+                delay: 1.5,
+                duration: 2.5,
+                times: [0, 0.05, 0.15, 0.4, 0.55, 0.65, 0.8, 1],
+              }}
+              className="absolute -bottom-6 pointer-events-none"
+              style={{
+                right: "8px",
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+                fontSize: "16px",
+              }}
             >
               👆
             </motion.div>
