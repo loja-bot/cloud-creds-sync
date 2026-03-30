@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Maximize, SkipBack, SkipForward, ArrowLeft, Volume2, VolumeX, MoreVertical, Share2, ExternalLink, X, Check, Copy } from "lucide-react";
+import CastButton from "@/components/CastButton";
 import mpegts from "mpegts.js";
 import { useApp } from "@/contexts/AppContext";
 import { saveContinueWatching, getContinueWatching } from "@/lib/storage";
