@@ -473,6 +473,7 @@ const VideoPlayer: React.FC = () => {
                   className="tv-focusable w-10 h-10 rounded-full bg-card/60 flex items-center justify-center">
                   {muted ? <VolumeX className="w-5 h-5 text-foreground" /> : <Volume2 className="w-5 h-5 text-foreground" />}
                 </button>
+                <CastButton videoRef={videoRef as React.RefObject<HTMLVideoElement>} className="tv-focusable" />
                 <button data-focusable onClick={toggleFullscreen}
                   className="tv-focusable w-10 h-10 rounded-full bg-card/60 flex items-center justify-center">
                   <Maximize className="w-5 h-5 text-foreground" />
