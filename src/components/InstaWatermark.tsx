@@ -13,6 +13,8 @@ const InstaWatermark: React.FC = () => {
   const [followed, setFollowed] = useState(false);
   const [heartBurst, setHeartBurst] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  const [likeGlow, setLikeGlow] = useState(false);
+  const [followGlow, setFollowGlow] = useState(false);
   const followBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -36,24 +38,27 @@ const InstaWatermark: React.FC = () => {
     if (liked) return;
     setLiked(true);
     setHeartBurst(true);
+    setLikeGlow(true);
     setConfetti(true);
     setTimeout(() => setHeartBurst(false), 600);
+    setTimeout(() => setLikeGlow(false), 800);
     setTimeout(() => setConfetti(false), 1000);
   };
 
   const handleFollow = () => {
+    if (followed) return;
     setFollowed(true);
+    setFollowGlow(true);
     setConfetti(true);
+    setTimeout(() => setFollowGlow(false), 800);
     setTimeout(() => setConfetti(false), 1000);
-    // Redirect to Instagram after animation
+    // Redirect to Instagram
     setTimeout(() => {
       window.open(INSTA_URL, "_blank", "noopener,noreferrer");
-    }, 400);
+    }, 500);
   };
 
   const letters = `@${HANDLE}`.split("");
-
-  // Confetti particles
   const confettiColors = ["#ff6b6b", "#feca57", "#48dbfb", "#ff9ff3", "#54a0ff", "#5f27cd"];
 
   return (
@@ -64,14 +69,15 @@ const InstaWatermark: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 30 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="fixed bottom-4 left-4 z-50 flex items-center gap-2.5 pointer-events-auto"
+          className="fixed bottom-4 left-4 z-50 pointer-events-auto"
         >
           <motion.div
-            className="flex items-center gap-2 bg-background/80 backdrop-blur-md border border-border/50 rounded-xl px-3 py-2 shadow-lg"
+            className="relative flex items-center gap-2 bg-background/80 backdrop-blur-md border border-border/50 rounded-xl px-3 py-2 shadow-lg"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15 }}
           >
+            {/* Instagram icon */}
             <motion.div
               className="relative w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-[2px] flex-shrink-0"
               initial={{ rotate: -10 }}
@@ -83,6 +89,7 @@ const InstaWatermark: React.FC = () => {
               </div>
             </motion.div>
 
+            {/* Handle text */}
             <div className="flex items-center">
               {letters.map((letter, i) => (
                 <motion.span
@@ -102,21 +109,32 @@ const InstaWatermark: React.FC = () => {
               ))}
             </div>
 
+            {/* Like button */}
             <motion.button
               onClick={handleLike}
               whileTap={{ scale: 0.8 }}
               className="relative ml-1 p-1 rounded-full hover:bg-muted/50 transition-colors overflow-visible"
             >
-              <motion.div
-                animate={liked ? { scale: [1, 1.4, 1] } : {}}
-                transition={{ duration: 0.4 }}
-              >
+              <motion.div animate={liked ? { scale: [1, 1.4, 1] } : {}} transition={{ duration: 0.4 }}>
                 <Heart
                   className={`w-3.5 h-3.5 transition-colors duration-300 ${
                     liked ? "text-red-500 fill-red-500" : "text-muted-foreground"
                   }`}
                 />
               </motion.div>
+              {/* Like glow */}
+              <AnimatePresence>
+                {likeGlow && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2, 3] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.7 }}
+                    className="absolute inset-0 rounded-full bg-red-500/30 pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
+              {/* Heart burst particles */}
               <AnimatePresence>
                 {heartBurst && (
                   <>
@@ -140,6 +158,7 @@ const InstaWatermark: React.FC = () => {
               </AnimatePresence>
             </motion.button>
 
+            {/* Follow button */}
             <motion.button
               ref={followBtnRef}
               onClick={handleFollow}
@@ -147,22 +166,19 @@ const InstaWatermark: React.FC = () => {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1 }}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-300 ${
+              className={`relative flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-300 ${
                 followed
                   ? "bg-muted text-muted-foreground"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
               }`}
             >
               <UserPlus className="w-2.5 h-2.5" />
-              <motion.span
-                animate={followed ? { scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.3 }}
-              >
+              <motion.span animate={followed ? { scale: [1, 1.1, 1] } : {}} transition={{ duration: 0.3 }}>
                 {followed ? "Seguindo" : "Seguir"}
               </motion.span>
-              {/* Glow effect on follow */}
+              {/* Follow glow */}
               <AnimatePresence>
-                {followed && (
+                {followGlow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: [0, 0.6, 0], scale: [0.5, 1.8, 2.5] }}
@@ -203,17 +219,17 @@ const InstaWatermark: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Animated hand pointing to follow button */}
+            {/* Hand pointing - animated to follow button position */}
             <motion.div
-              initial={{ opacity: 0, x: -30, y: 10 }}
+              initial={{ opacity: 0 }}
               animate={{
-                opacity: [0, 1, 1, 1, 1, 0],
-                x: [-30, 0, 0, 2, 0, 0],
-                y: [10, 0, 0, -3, 0, -5],
-                scale: [1, 1, 1, 0.9, 1, 1],
+                opacity: [0, 1, 1, 1, 0],
+                y: [8, 0, 0, -2, -4],
+                x: [0, 0, 0, 0, 0],
               }}
-              transition={{ delay: 1.5, duration: 2.5, times: [0, 0.2, 0.4, 0.5, 0.6, 1] }}
-              className="absolute -right-2 -bottom-3 text-xs pointer-events-none"
+              transition={{ delay: 2, duration: 2, times: [0, 0.15, 0.5, 0.7, 1] }}
+              className="absolute -bottom-5 right-2 text-sm pointer-events-none"
+              style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
             >
               👆
             </motion.div>
