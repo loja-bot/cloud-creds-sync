@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SharePage from "./pages/SharePage.tsx";
+import InstallPage from "./pages/InstallPage.tsx";
 
 const queryClient = new QueryClient();
 
