@@ -107,6 +107,7 @@ const AdminPanel: React.FC = () => {
   // Blocked content (stored in app_settings)
   const [blockedContent, setBlockedContent] = useState<any[]>([]);
   const [blockedCategories, setBlockedCategories] = useState<any[]>([]);
+  const [installLink, setInstallLink] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
