@@ -2,12 +2,14 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { getSeriesCategories, getSeries, getSeriesInfo, buildStreamUrl, type Category, type SeriesInfo } from "@/lib/xtream";
 import { addFavorite, removeFavorite, isFavorite } from "@/lib/storage";
+import { useBlockedContent } from "@/hooks/useBlockedContent";
 import ContentCard from "./ContentCard";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clapperboard, Loader2, Play, X, Star, Search } from "lucide-react";
+import { Clapperboard, Loader2, Play, X, Star, Search, AlertTriangle } from "lucide-react";
 
 const SeriesSection: React.FC = () => {
   const { credentials, openPlayer } = useApp();
+  const { isContentBlocked, isCategoryBlocked, getCategoryAction } = useBlockedContent();
   const [categories, setCategories] = useState<Category[]>([]);
   const [seriesList, setSeriesList] = useState<SeriesInfo[]>([]);
   const [selectedCat, setSelectedCat] = useState("");
@@ -16,6 +18,7 @@ const SeriesSection: React.FC = () => {
   const [seasons, setSeasons] = useState<any>(null);
   const [selectedSeason, setSelectedSeason] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [warningMsg, setWarningMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!credentials) return;
@@ -27,15 +30,36 @@ const SeriesSection: React.FC = () => {
 
   useEffect(() => {
     if (!credentials || !selectedCat) return;
+
+    const catAction = getCategoryAction(selectedCat, "series");
+    if (catAction) {
+      if (catAction.action === "removed" || catAction.action === "banned") {
+        setSeriesList([]); setLoading(false); setWarningMsg(null); return;
+      }
+      if (catAction.action === "warning") {
+        setWarningMsg(catAction.message || "Categoria indisponível."); setSeriesList([]); setLoading(false); return;
+      }
+      if (catAction.action === "maintenance") {
+        setWarningMsg("Categoria em manutenção."); setSeriesList([]); setLoading(false); return;
+      }
+    } else { setWarningMsg(null); }
+
     setLoading(true);
-    getSeries(credentials, selectedCat).then((s) => setSeriesList(s || [])).catch(console.error).finally(() => setLoading(false));
-  }, [credentials, selectedCat]);
+    getSeries(credentials, selectedCat).then((s) => {
+      setSeriesList((s || []).filter(item => !isContentBlocked(item.series_id, "series")));
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [credentials, selectedCat, isContentBlocked, getCategoryAction]);
 
   const filteredSeries = useMemo(() => {
     if (!searchQuery.trim()) return seriesList;
     const q = searchQuery.toLowerCase();
     return seriesList.filter(s => s.name.toLowerCase().includes(q));
   }, [seriesList, searchQuery]);
+
+  const visibleCategories = categories.filter(cat => {
+    const action = getCategoryAction(cat.category_id, "series");
+    return !action || action.action === "warning" || action.action === "maintenance";
+  });
 
   const showDetail = async (series: SeriesInfo) => {
     if (!credentials) return;
@@ -49,7 +73,7 @@ const SeriesSection: React.FC = () => {
         if (keys.length) setSelectedSeason(keys[0]);
       }
       if (info?.info) setDetail((d: any) => ({ ...d, ...info.info }));
-    } catch { }
+    } catch {}
   };
 
   const handlePlayEpisode = (episode: any) => {
@@ -75,7 +99,7 @@ const SeriesSection: React.FC = () => {
           <Clapperboard className="w-4 h-4 text-primary" />
           <span className="font-display text-xs font-bold text-primary tracking-wider">SÉRIES</span>
         </div>
-        {categories.map((cat) => (
+        {visibleCategories.map((cat) => (
           <button key={cat.category_id} data-focusable onClick={() => setSelectedCat(cat.category_id)}
             className={`tv-focusable w-full text-left px-3 py-2 rounded-lg text-xs transition-all truncate ${
               selectedCat === cat.category_id ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -84,16 +108,11 @@ const SeriesSection: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto hide-scrollbar p-4 space-y-4">
-        {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Pesquisar séries..."
-            value={searchQuery}
+          <input type="text" placeholder="Pesquisar séries..." value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-          />
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors" />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
@@ -101,7 +120,12 @@ const SeriesSection: React.FC = () => {
           )}
         </div>
 
-        {loading ? (
+        {warningMsg ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <AlertTriangle className="w-12 h-12 text-yellow-500" />
+            <p className="text-foreground font-semibold text-center">{warningMsg}</p>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -112,12 +136,11 @@ const SeriesSection: React.FC = () => {
             ))}
           </div>
         )}
-        {!loading && filteredSeries.length === 0 && searchQuery && (
+        {!loading && !warningMsg && filteredSeries.length === 0 && searchQuery && (
           <p className="text-center text-muted-foreground text-sm py-8">Nenhuma série encontrada para "{searchQuery}"</p>
         )}
       </div>
 
-      {/* Series detail */}
       <AnimatePresence>
         {detail && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

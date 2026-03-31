@@ -130,7 +130,6 @@ serve(async (req: Request) => {
       if (!key || !["blocked_content", "blocked_categories"].includes(key)) {
         return new Response(JSON.stringify({ error: "Invalid key" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      // Upsert the setting
       const { data: existing } = await supabase.from("app_settings").select("id").eq("key", key).maybeSingle();
       if (existing) {
         const { error } = await supabase.from("app_settings").update({ value, updated_at: new Date().toISOString() }).eq("key", key);
@@ -140,6 +139,22 @@ serve(async (req: Request) => {
         if (error) throw error;
       }
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // --- GENERATE INSTALL TOKEN ---
+    if (action === "generate_install_token") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (!user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: tokenData, error } = await supabase.from("install_tokens").insert({ created_by: user.id }).select().single();
+      if (error) throw error;
+      return new Response(JSON.stringify({ token: tokenData.token, expires_at: tokenData.expires_at }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SharePage from "./pages/SharePage.tsx";
+import InstallPage from "./pages/InstallPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/install" element={<InstallPage />} />
           <Route path="/share/:token" element={<SharePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

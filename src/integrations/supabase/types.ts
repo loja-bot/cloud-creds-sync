@@ -77,6 +77,57 @@ export type Database = {
         }
         Relationships: []
       }
+      install_reviews: {
+        Row: {
+          avatar_url: string | null
+          comment: string
+          created_at: string
+          id: string
+          name: string
+          rating: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          comment: string
+          created_at?: string
+          id?: string
+          name: string
+          rating: number
+        }
+        Update: {
+          avatar_url?: string | null
+          comment?: string
+          created_at?: string
+          id?: string
+          name?: string
+          rating?: number
+        }
+        Relationships: []
+      }
+      install_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       iptv_credentials: {
         Row: {
           bot_source: string | null
