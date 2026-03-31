@@ -5,7 +5,7 @@ import {
   Users, ShieldX, ShieldCheck, Clock, Trash2, Wrench,
   Globe, ArrowLeft, Loader2, Tv, RefreshCw, X, Check,
   Film, Clapperboard, Radio, Search, Ban, AlertTriangle,
-  FolderOpen, ChevronRight, Eye, EyeOff, MessageSquare
+  FolderOpen, ChevronRight, Eye, EyeOff, MessageSquare, Link2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
