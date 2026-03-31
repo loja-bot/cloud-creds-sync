@@ -323,6 +323,22 @@ const AdminPanel: React.FC = () => {
     showToast("Host atualizado"); setShowHostModal(false); setActionLoading("");
   };
 
+  const handleGenerateInstallLink = async () => {
+    setActionLoading("install");
+    try {
+      const res = await adminApi("generate_install_token");
+      if (res.token) {
+        const link = `${window.location.origin}/install?token=${res.token}`;
+        setInstallLink(link);
+        await navigator.clipboard.writeText(link);
+        showToast("Link copiado! Expira em 20 min");
+      } else {
+        showToast("Erro ao gerar link");
+      }
+    } catch { showToast("Erro ao gerar link"); }
+    setActionLoading("");
+  };
+
   const formatDate = (d: string | null) => {
     if (!d) return "—";
     try { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
