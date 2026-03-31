@@ -432,12 +432,19 @@ const AdminPanel: React.FC = () => {
               {/* Quick Actions */}
               <div className="space-y-3">
                 <h2 className="font-display text-xs font-bold text-muted-foreground tracking-widest">AÇÕES RÁPIDAS</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <QuickBtn icon={Users} label="LISTAR" color="bg-card border-primary/30 text-primary" onClick={fetchUsers} disabled={loading} />
                   <QuickBtn icon={Wrench} label={maintenanceEnabled ? "DESATIVAR" : "MANUTENÇÃO"} color={maintenanceEnabled ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-card border-accent/30 text-accent"} onClick={() => setShowMaintenanceModal(true)} />
                   <QuickBtn icon={Globe} label="HOST" color="bg-card border-blue-500/30 text-blue-400" onClick={() => setShowHostModal(true)} />
+                  <QuickBtn icon={Link2} label="INSTALL LINK" color="bg-card border-primary/30 text-primary" onClick={handleGenerateInstallLink} disabled={actionLoading === "install"} />
                   <QuickBtn icon={RefreshCw} label="ATUALIZAR" color="bg-card border-muted-foreground/30 text-muted-foreground" onClick={() => { fetchUsers(); fetchSettings(); }} disabled={loading} />
                 </div>
+                {installLink && (
+                  <div className="bg-card border border-primary/20 rounded-xl p-3 mt-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">Link de instalação (expira em 20 min):</p>
+                    <p className="text-primary text-xs break-all font-mono cursor-pointer" onClick={() => { navigator.clipboard.writeText(installLink); showToast("Link copiado!"); }}>{installLink}</p>
+                  </div>
+                )}
               </div>
 
               {/* Users list */}
