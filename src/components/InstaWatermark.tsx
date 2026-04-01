@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, UserPlus, Instagram } from "lucide-react";
 
@@ -16,6 +16,20 @@ const InstaWatermark: React.FC = () => {
   const [likeGlow, setLikeGlow] = useState(false);
   const [followGlow, setFollowGlow] = useState(false);
   const followBtnRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [fingerPos, setFingerPos] = useState({ x: 0, y: 0 });
+
+  // Calculate finger position to be exactly over the follow button
+  const updateFingerPos = useCallback(() => {
+    if (followBtnRef.current && containerRef.current) {
+      const btnRect = followBtnRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      setFingerPos({
+        x: btnRect.left - containerRect.left + btnRect.width / 2 - 8,
+        y: btnRect.top - containerRect.top + btnRect.height + 4,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const show = () => {
@@ -26,13 +40,21 @@ const InstaWatermark: React.FC = () => {
     };
 
     const interval = setInterval(show, INTERVAL);
-    const firstTimeout = setTimeout(show, 30000);
+    const firstTimeout = setTimeout(show, 3000);
 
     return () => {
       clearInterval(interval);
       clearTimeout(firstTimeout);
     };
   }, []);
+
+  // Update finger position when visible
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(updateFingerPos, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, updateFingerPos]);
 
   const handleLike = () => {
     if (liked) return;
@@ -71,6 +93,7 @@ const InstaWatermark: React.FC = () => {
           className="fixed bottom-4 left-4 z-50 pointer-events-auto"
         >
           <motion.div
+            ref={containerRef}
             className="relative flex items-center gap-2 bg-background/80 backdrop-blur-md border border-border/50 rounded-xl px-3 py-2 shadow-lg"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -124,15 +147,15 @@ const InstaWatermark: React.FC = () => {
                   }`}
                 />
               </motion.div>
-              {/* Like glow */}
+              {/* Like glow ring */}
               <AnimatePresence>
                 {likeGlow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2.5, 3.5] }}
+                    animate={{ opacity: [0, 0.9, 0], scale: [0.5, 2.5, 4] }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.7 }}
-                    className="absolute inset-0 rounded-full bg-red-500/30 pointer-events-none"
+                    className="absolute inset-0 rounded-full bg-red-500/40 pointer-events-none"
                   />
                 )}
               </AnimatePresence>
@@ -169,7 +192,7 @@ const InstaWatermark: React.FC = () => {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1 }}
-              className={`relative flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-300 ${
+              className={`relative flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-300 overflow-visible ${
                 followed
                   ? "bg-muted text-muted-foreground"
                   : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -177,20 +200,20 @@ const InstaWatermark: React.FC = () => {
             >
               <UserPlus className="w-2.5 h-2.5" />
               <motion.span
-                animate={followed ? { scale: [1, 1.2, 1] } : {}}
+                animate={followed ? { scale: [1, 1.3, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
                 {followed ? "Seguindo" : "Seguir"}
               </motion.span>
-              {/* Follow glow */}
+              {/* Follow glow ring */}
               <AnimatePresence>
                 {followGlow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 2, 3] }}
+                    animate={{ opacity: [0, 0.9, 0], scale: [0.5, 2.5, 3.5] }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="absolute inset-0 rounded-md bg-primary/40 pointer-events-none"
+                    className="absolute inset-0 rounded-md bg-primary/50 pointer-events-none"
                   />
                 )}
               </AnimatePresence>
@@ -225,28 +248,34 @@ const InstaWatermark: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Animated hand pointing - targets the follow button precisely */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: [0, 0, 1, 1, 1, 1, 0.8, 0],
-                y: [10, 10, 0, 0, -2, -4, -2, 0],
-                scale: [0.8, 0.8, 1, 1, 0.9, 1.1, 1, 0.8],
-              }}
-              transition={{
-                delay: 1.5,
-                duration: 2.5,
-                times: [0, 0.05, 0.15, 0.4, 0.55, 0.65, 0.8, 1],
-              }}
-              className="absolute -bottom-6 pointer-events-none"
-              style={{
-                right: "8px",
-                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
-                fontSize: "16px",
-              }}
-            >
-              👆
-            </motion.div>
+            {/* Animated hand pointing directly at follow button */}
+            {!followed && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: [0, 0, 1, 1, 1, 1, 0.8, 0],
+                  y: [8, 8, 0, 0, -3, 0, 0, 8],
+                  scale: [0.7, 0.7, 1, 1, 0.85, 1.05, 1, 0.7],
+                }}
+                transition={{
+                  delay: 1.5,
+                  duration: 3,
+                  times: [0, 0.05, 0.15, 0.4, 0.55, 0.65, 0.85, 1],
+                  repeat: Infinity,
+                  repeatDelay: 1,
+                }}
+                className="absolute pointer-events-none"
+                style={{
+                  left: fingerPos.x > 0 ? `${fingerPos.x}px` : "calc(100% - 32px)",
+                  top: fingerPos.x > 0 ? `${fingerPos.y}px` : "calc(100% + 4px)",
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+                  fontSize: "18px",
+                  zIndex: 100,
+                }}
+              >
+                👆
+              </motion.div>
+            )}
           </motion.div>
         </motion.div>
       )}
