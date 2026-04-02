@@ -101,22 +101,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchProfile();
 
-    // Listen for realtime changes to this user's profile (ban/expiration updates)
-    const channel = supabase
-      .channel("app-user-changes")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "app_users",
-        filter: `user_id=eq.${authUser.id}`,
-      }, (payload) => {
-        if (payload.new) {
-          setAppUser(payload.new as AppUser);
-        }
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    // Poll for profile changes every 30s (realtime removed for security)
+    const interval = setInterval(() => fetchProfile(), 30000);
+    return () => clearInterval(interval);
   }, [authUser]);
 
   // Fetch maintenance mode settings
