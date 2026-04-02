@@ -190,18 +190,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    const channel = supabase
-      .channel("iptv-creds")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "iptv_credentials",
-      }, () => {
+    // Poll for credential changes every 60s (realtime removed for security)
+    const interval = setInterval(() => {
+      if (authUser && appUser && !appUser.is_banned) {
         fetchCredentials();
-      })
-      .subscribe();
+      }
+    }, 60000);
 
-    return () => { supabase.removeChannel(channel); };
+    return () => clearInterval(interval);
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
