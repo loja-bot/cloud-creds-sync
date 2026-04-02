@@ -161,6 +161,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          action: string
+          attempt_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action: string
+          attempt_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action?: string
+          attempt_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       share_tokens: {
         Row: {
           created_at: string

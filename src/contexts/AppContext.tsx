@@ -101,22 +101,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchProfile();
 
-    // Listen for realtime changes to this user's profile (ban/expiration updates)
-    const channel = supabase
-      .channel("app-user-changes")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "app_users",
-        filter: `user_id=eq.${authUser.id}`,
-      }, (payload) => {
-        if (payload.new) {
-          setAppUser(payload.new as AppUser);
-        }
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    // Poll for profile changes every 30s (realtime removed for security)
+    const interval = setInterval(() => fetchProfile(), 30000);
+    return () => clearInterval(interval);
   }, [authUser]);
 
   // Fetch maintenance mode settings
@@ -203,18 +190,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    const channel = supabase
-      .channel("iptv-creds")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "iptv_credentials",
-      }, () => {
+    // Poll for credential changes every 60s (realtime removed for security)
+    const interval = setInterval(() => {
+      if (authUser && appUser && !appUser.is_banned) {
         fetchCredentials();
-      })
-      .subscribe();
+      }
+    }, 60000);
 
-    return () => { supabase.removeChannel(channel); };
+    return () => clearInterval(interval);
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
