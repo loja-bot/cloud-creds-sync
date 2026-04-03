@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User, Phone, Instagram } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`;
+
+const ADMIN_WHATSAPP = "14389423427";
+const ADMIN_INSTAGRAM = "7p_thayson";
 
 async function streamChat({
   messages,
@@ -65,6 +68,43 @@ async function streamChat({
     }
   }
   onDone();
+}
+
+function ContactButtons() {
+  return (
+    <div className="flex gap-2 mt-2">
+      <a
+        href={`https://wa.me/${ADMIN_WHATSAPP}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
+      >
+        <Phone className="w-3.5 h-3.5" />
+        WhatsApp
+      </a>
+      <a
+        href={`https://instagram.com/${ADMIN_INSTAGRAM}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-medium hover:opacity-90 transition"
+      >
+        <Instagram className="w-3.5 h-3.5" />
+        Instagram
+      </a>
+    </div>
+  );
+}
+
+function renderMessageContent(content: string) {
+  const hasContact = content.includes("[CONTATO_ADMIN]");
+  const cleanContent = content.replace(/\[CONTATO_ADMIN\]/g, "").trim();
+  
+  return (
+    <>
+      {cleanContent}
+      {hasContact && <ContactButtons />}
+    </>
+  );
 }
 
 const SupportChat: React.FC = () => {
