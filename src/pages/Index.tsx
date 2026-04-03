@@ -88,6 +88,7 @@ const AppContent: React.FC = () => {
         </AnimatePresence>
       </main>
       <InstaWatermark />
+      <SupportChat />
     </div>
   );
 };
