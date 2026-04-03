@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import Sidebar from "@/components/Sidebar";
 import HomeSection from "@/components/HomeSection";
@@ -17,7 +17,7 @@ import { Loader2, Tv } from "lucide-react";
 import InstaWatermark from "@/components/InstaWatermark";
 import SupportChat from "@/components/SupportChat";
 
-const AppContent: React.FC = () => {
+const AppContent = () => {
   const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage } = useApp();
   const [splashDone, setSplashDone] = useState(false);
 
