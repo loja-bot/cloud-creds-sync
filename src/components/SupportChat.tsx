@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Loader2, Bot, User, Phone, Instagram } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -8,6 +9,15 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat
 
 const ADMIN_WHATSAPP = "+14389423427";
 const ADMIN_INSTAGRAM = "7p_thayson";
+
+async function getUserToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
 
 async function streamChat({
   messages,
@@ -20,13 +30,15 @@ async function streamChat({
   onDone: () => void;
   onError: (msg: string) => void;
 }) {
+  const userToken = await getUserToken();
+
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, userToken }),
   });
 
   if (!resp.ok) {
@@ -43,6 +55,7 @@ async function streamChat({
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let fullContent = "";
 
   while (true) {
     const { done, value } = await reader.read();
@@ -60,13 +73,24 @@ async function streamChat({
       try {
         const parsed = JSON.parse(json);
         const content = parsed.choices?.[0]?.delta?.content;
-        if (content) onDelta(content);
+        if (content) {
+          fullContent += content;
+          onDelta(content);
+        }
       } catch {
         buffer = line + "\n" + buffer;
         break;
       }
     }
   }
+
+  // Check if user was banned - reload page after a short delay
+  if (fullContent.includes("[USER_BANNED]")) {
+    setTimeout(() => {
+      window.location.reload();
+    }, 4000);
+  }
+
   onDone();
 }
 
@@ -74,7 +98,7 @@ function ContactButtons() {
   return (
     <div className="flex gap-2 mt-2">
       <a
-        href={`https://api.whatsapp.com/send?phone=14389423427`}
+        href="https://api.whatsapp.com/send?phone=14389423427"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
@@ -97,17 +121,26 @@ function ContactButtons() {
 
 function renderMessageContent(content: string) {
   const hasContact = content.includes("[CONTATO_ADMIN]");
-  const cleanContent = content.replace(/\[CONTATO_ADMIN\]/g, "").trim();
-  
+  const hasBan = content.includes("[USER_BANNED]");
+  let cleanContent = content
+    .replace(/\[CONTATO_ADMIN\]/g, "")
+    .replace(/\[USER_BANNED\]/g, "")
+    .trim();
+
   return (
     <>
       {cleanContent}
       {hasContact && <ContactButtons />}
+      {hasBan && (
+        <div className="mt-2 px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive text-xs font-medium">
+          ⏳ Sua sessão será encerrada em instantes...
+        </div>
+      )}
     </>
   );
 }
 
-const SupportChat: React.FC = () => {
+const SupportChat = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -192,7 +225,7 @@ const SupportChat: React.FC = () => {
                 <Bot className="w-5 h-5" />
                 <div>
                   <p className="font-semibold text-sm">Suporte Thayson TV</p>
-                  <p className="text-xs opacity-80">Online • Resposta instantânea</p>
+                  <p className="text-xs opacity-80">Online • IA Avançada</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-white/20 transition">
