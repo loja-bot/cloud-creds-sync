@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ShieldX, Tv } from "lucide-react";
+import SupportChat from "@/components/SupportChat";
 
 interface BannedScreenProps {
   reason?: string | null;
