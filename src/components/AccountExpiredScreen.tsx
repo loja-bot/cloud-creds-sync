@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Clock, Tv } from "lucide-react";
+import SupportChat from "@/components/SupportChat";
 
 const AccountExpiredScreen: React.FC = () => {
   return (
