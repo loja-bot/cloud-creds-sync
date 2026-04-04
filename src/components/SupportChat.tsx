@@ -74,7 +74,7 @@ function ContactButtons() {
   return (
     <div className="flex gap-2 mt-2">
       <a
-        href={`https://wa.me/${ADMIN_WHATSAPP}`}
+        href={`https://api.whatsapp.com/send?phone=14389423427`}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
@@ -83,7 +83,7 @@ function ContactButtons() {
         WhatsApp
       </a>
       <a
-        href={`https://instagram.com/${ADMIN_INSTAGRAM}`}
+        href={`https://www.instagram.com/${ADMIN_INSTAGRAM}/`}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-medium hover:opacity-90 transition"
