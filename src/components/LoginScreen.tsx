@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Tv, Loader2 } from "lucide-react";
+import SupportChat from "@/components/SupportChat";
 import { lovable } from "@/integrations/lovable/index";
 
 const LoginScreen: React.FC = () => {
