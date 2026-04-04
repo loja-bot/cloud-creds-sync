@@ -6,7 +6,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`;
 
-const ADMIN_WHATSAPP = "14389423427";
+const ADMIN_WHATSAPP = "+14389423427";
 const ADMIN_INSTAGRAM = "7p_thayson";
 
 async function streamChat({
