@@ -164,13 +164,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setSection("maintenance");
           setExpiresAt(data.expires_at);
         } else {
-          setCredentials({
+          const newCreds = {
             host: data.host,
             username: data.username,
             password: data.password,
+          };
+          setCredentials(prev => {
+            // Only reset to home on first load (when no credentials existed before)
+            if (!prev) {
+              setSection("home");
+            }
+            return newCreds;
           });
           setExpiresAt(data.expires_at);
-          setSection("home");
         }
       } else {
         setSection("maintenance");
