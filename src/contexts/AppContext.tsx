@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { XtreamCredentials } from "@/lib/xtream";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -37,7 +37,6 @@ interface AppContextType {
   openPlayer: (state: PlayerState) => void;
   closePlayer: () => void;
   previousSection: Section;
-  // Auth
   authUser: User | null;
   appUser: AppUser | null;
   authLoading: boolean;
@@ -55,15 +54,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [playerState, setPlayerState] = useState<PlayerState | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentSectionRef = useRef<Section>("home");
 
-  // Auth state
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("Em manutenção");
 
-  // Auth listener
+  useEffect(() => {
+    currentSectionRef.current = section;
+  }, [section]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
@@ -81,7 +83,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch app_user profile when authenticated
   useEffect(() => {
     if (!authUser) return;
 
@@ -93,20 +94,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (data) {
-        setAppUser(data as AppUser);
-        // Update last_login via edge function would be ideal but for now just set state
+        setAppUser((prev) => {
+          if (
+            prev &&
+            prev.user_id === data.user_id &&
+            prev.email === data.email &&
+            prev.display_name === data.display_name &&
+            prev.avatar_url === data.avatar_url &&
+            prev.account_expires_at === data.account_expires_at &&
+            prev.is_permanent === data.is_permanent &&
+            prev.is_banned === data.is_banned &&
+            prev.ban_reason === data.ban_reason
+          ) {
+            return prev;
+          }
+          return data as AppUser;
+        });
       }
       setAuthLoading(false);
     };
 
     fetchProfile();
 
-    // Poll for profile changes every 30s (realtime removed for security)
-    const interval = setInterval(() => fetchProfile(), 30000);
+    const interval = setInterval(fetchProfile, 30000);
     return () => clearInterval(interval);
   }, [authUser]);
 
-  // Fetch maintenance mode settings
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
@@ -124,7 +137,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchSettings();
 
-    // Realtime for settings changes - auto-reload on admin changes
     const channel = supabase
       .channel("settings-changes")
       .on("postgres_changes", {
@@ -132,20 +144,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         schema: "public",
         table: "app_settings",
       }, (payload) => {
-        const key = (payload.new as any)?.key;
-        // For critical admin changes, force instant reload
-        if (key === "maintenance_mode" || key === "default_host" || key === "admin_emails") {
-          window.location.reload();
-          return;
+        const key = (payload.new as { key?: string } | null)?.key;
+        if (key === "maintenance_mode") {
+          fetchSettings();
         }
-        fetchSettings();
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Fetch IPTV credentials
   const fetchCredentials = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -158,36 +168,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      if (data) {
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          setCredentials(null);
-          setSection("maintenance");
-          setExpiresAt(data.expires_at);
-        } else {
-          const newCreds = {
-            host: data.host,
-            username: data.username,
-            password: data.password,
-          };
-          setCredentials(prev => {
-            // Only reset to home on first load (when no credentials existed before)
-            if (!prev) {
-              setSection("home");
-            }
-            return newCreds;
-          });
-          setExpiresAt(data.expires_at);
-        }
-      } else {
+      if (!data) {
+        setCredentials(null);
         setSection("maintenance");
+        setExpiresAt(null);
+        return;
       }
+
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        setCredentials(null);
+        setSection("maintenance");
+        setExpiresAt(data.expires_at);
+        return;
+      }
+
+      const newCreds = {
+        host: data.host,
+        username: data.username,
+        password: data.password,
+      };
+
+      setCredentials(newCreds);
+      setExpiresAt(data.expires_at);
+
+      setSection((prev) => {
+        if (prev === "maintenance") {
+          return previousSection === "maintenance" ? "home" : previousSection;
+        }
+        return prev;
+      });
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
+      setCredentials(null);
       setSection("maintenance");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [previousSection]);
 
   useEffect(() => {
     if (authUser && appUser && !appUser.is_banned) {
@@ -196,7 +213,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    // Realtime listener for credential changes (auto-exit maintenance)
     const channel = supabase
       .channel("iptv-credentials-changes")
       .on("postgres_changes", {
@@ -205,13 +221,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         table: "iptv_credentials",
       }, () => {
         if (authUser && appUser && !appUser.is_banned) {
-          console.log("IPTV credentials changed, refetching...");
           fetchCredentials();
         }
       })
       .subscribe();
 
-    // Also poll every 60s as fallback
     const interval = setInterval(() => {
       if (authUser && appUser && !appUser.is_banned) {
         fetchCredentials();
@@ -225,34 +239,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
-    setPreviousSection(section);
+    setPreviousSection(currentSectionRef.current);
     setSection(s);
-  }, [section]);
+  }, []);
 
   const openPlayer = useCallback((state: PlayerState) => {
-    setPreviousSection(section);
+    setPreviousSection(currentSectionRef.current);
     setPlayerState(state);
     setSection("player");
-  }, [section]);
+  }, []);
 
   const closePlayer = useCallback(() => {
     setPlayerState(null);
-    setSection(previousSection === "player" ? "home" : previousSection);
+    setSection((prev) => (prev === "player" ? (previousSection === "player" ? "home" : previousSection) : prev));
   }, [previousSection]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setAuthUser(null);
     setAppUser(null);
+    setCredentials(null);
     setSection("home");
   }, []);
 
   return (
     <AppContext.Provider value={{
-      credentials, section, playerState, expiresAt, loading,
-      navigate, openPlayer, closePlayer, previousSection,
-      authUser, appUser, authLoading, signOut,
-      maintenanceMode, maintenanceMessage,
+      credentials,
+      section,
+      playerState,
+      expiresAt,
+      loading,
+      navigate,
+      openPlayer,
+      closePlayer,
+      previousSection,
+      authUser,
+      appUser,
+      authLoading,
+      signOut,
+      maintenanceMode,
+      maintenanceMessage,
     }}>
       {children}
     </AppContext.Provider>
