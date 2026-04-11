@@ -196,14 +196,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    // Poll for credential changes every 60s (realtime removed for security)
+    // Realtime listener for credential changes (auto-exit maintenance)
+    const channel = supabase
+      .channel("iptv-credentials-changes")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "iptv_credentials",
+      }, () => {
+        if (authUser && appUser && !appUser.is_banned) {
+          console.log("IPTV credentials changed, refetching...");
+          fetchCredentials();
+        }
+      })
+      .subscribe();
+
+    // Also poll every 60s as fallback
     const interval = setInterval(() => {
       if (authUser && appUser && !appUser.is_banned) {
         fetchCredentials();
       }
     }, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
