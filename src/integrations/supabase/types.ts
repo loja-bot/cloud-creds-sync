@@ -230,6 +230,27 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_rate_limits: {
+        Row: {
+          attempted_at: string
+          email_domain: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          attempted_at?: string
+          email_domain: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          attempted_at?: string
+          email_domain?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
