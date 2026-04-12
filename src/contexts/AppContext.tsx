@@ -172,6 +172,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (!data) {
         setCredentials(null);
+        wasInMaintenanceRef.current = true;
         setSection("maintenance");
         setExpiresAt(null);
         return;
@@ -179,6 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setCredentials(null);
+        wasInMaintenanceRef.current = true;
         setSection("maintenance");
         setExpiresAt(data.expires_at);
         return;
@@ -190,15 +192,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         password: data.password,
       };
 
+      const wasInMaintenance = wasInMaintenanceRef.current;
       setCredentials(newCreds);
       setExpiresAt(data.expires_at);
 
-      setSection((prev) => {
-        if (prev === "maintenance") {
-          return previousSection === "maintenance" ? "home" : previousSection;
-        }
-        return prev;
-      });
+      if (wasInMaintenance) {
+        wasInMaintenanceRef.current = false;
+        toast.success("Playlist atualizada!", {
+          description: "Nova playlist detectada. Aproveite!",
+          duration: 5000,
+        });
+        setSection("home");
+      }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
       setCredentials(null);
