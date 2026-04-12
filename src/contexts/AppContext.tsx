@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { XtreamCredentials } from "@/lib/xtream";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 
 type Section = "home" | "live" | "movies" | "series" | "favorites" | "player" | "maintenance";
