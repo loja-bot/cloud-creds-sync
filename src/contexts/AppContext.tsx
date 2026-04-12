@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import type { XtreamCredentials } from "@/lib/xtream";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 
 type Section = "home" | "live" | "movies" | "series" | "favorites" | "player" | "maintenance";
@@ -55,6 +56,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const currentSectionRef = useRef<Section>("home");
+  const wasInMaintenanceRef = useRef(false);
 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
@@ -170,6 +172,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (!data) {
         setCredentials(null);
+        wasInMaintenanceRef.current = true;
         setSection("maintenance");
         setExpiresAt(null);
         return;
@@ -177,6 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setCredentials(null);
+        wasInMaintenanceRef.current = true;
         setSection("maintenance");
         setExpiresAt(data.expires_at);
         return;
@@ -188,15 +192,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         password: data.password,
       };
 
+      const wasInMaintenance = wasInMaintenanceRef.current;
       setCredentials(newCreds);
       setExpiresAt(data.expires_at);
 
-      setSection((prev) => {
-        if (prev === "maintenance") {
-          return previousSection === "maintenance" ? "home" : previousSection;
-        }
-        return prev;
-      });
+      if (wasInMaintenance) {
+        wasInMaintenanceRef.current = false;
+        toast.success("Playlist atualizada!", {
+          description: "Nova playlist detectada. Aproveite!",
+          duration: 5000,
+        });
+        setSection("home");
+      }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
       setCredentials(null);
