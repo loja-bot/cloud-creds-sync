@@ -56,6 +56,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const currentSectionRef = useRef<Section>("home");
+  const wasInMaintenanceRef = useRef(false);
 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
