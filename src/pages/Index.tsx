@@ -12,13 +12,14 @@ import SplashScreen from "@/components/SplashScreen";
 import LoginScreen from "@/components/LoginScreen";
 import BannedScreen from "@/components/BannedScreen";
 import AccountExpiredScreen from "@/components/AccountExpiredScreen";
+import AgeVerificationScreen from "@/components/AgeVerificationScreen";
 import { AnimatePresence } from "framer-motion";
 import { Loader2, Tv } from "lucide-react";
 import InstaWatermark from "@/components/InstaWatermark";
 import SupportChat from "@/components/SupportChat";
 
 const AppContent = () => {
-  const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage } = useApp();
+  const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage, ageVerification, ageVerificationLoading } = useApp();
   const [splashDone, setSplashDone] = useState(false);
 
   if (!splashDone) {
@@ -52,6 +53,23 @@ const AppContent = () => {
     if (new Date(appUser.account_expires_at) < new Date()) {
       return <AccountExpiredScreen />;
     }
+  }
+
+  // Age verification loading
+  if (ageVerificationLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Tv className="w-10 h-10 text-primary" />
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // Age verification required
+  if (!ageVerification || !ageVerification.is_verified) {
+    return <AgeVerificationScreen />;
   }
 
   // Admin-forced maintenance mode

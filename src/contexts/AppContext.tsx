@@ -6,6 +6,12 @@ import type { User } from "@supabase/supabase-js";
 
 type Section = "home" | "live" | "movies" | "series" | "favorites" | "player" | "maintenance";
 
+interface AgeVerification {
+  is_verified: boolean;
+  age_category: string;
+}
+
+
 interface PlayerState {
   url: string;
   title: string;
@@ -44,6 +50,9 @@ interface AppContextType {
   signOut: () => void;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  ageVerification: AgeVerification | null;
+  ageVerificationLoading: boolean;
+  refreshVerification: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -63,6 +72,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("Em manutenção");
+  const [ageVerification, setAgeVerification] = useState<AgeVerification | null>(null);
+  const [ageVerificationLoading, setAgeVerificationLoading] = useState(true);
 
   useEffect(() => {
     currentSectionRef.current = section;
@@ -121,6 +132,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const interval = setInterval(fetchProfile, 30000);
     return () => clearInterval(interval);
   }, [authUser]);
+
+  const fetchVerification = useCallback(async () => {
+    if (!authUser) {
+      setAgeVerification(null);
+      setAgeVerificationLoading(false);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from("age_verifications")
+        .select("is_verified, age_category")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+      setAgeVerification(data as AgeVerification | null);
+    } catch (e) {
+      console.error("Failed to fetch verification:", e);
+    } finally {
+      setAgeVerificationLoading(false);
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    fetchVerification();
+  }, [fetchVerification]);
+
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -286,6 +322,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       maintenanceMode,
       maintenanceMessage,
+      ageVerification,
+      ageVerificationLoading,
+      refreshVerification: fetchVerification,
     }}>
       {children}
     </AppContext.Provider>
