@@ -72,6 +72,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("Em manutenção");
+  const [ageVerification, setAgeVerification] = useState<AgeVerification | null>(null);
+  const [ageVerificationLoading, setAgeVerificationLoading] = useState(true);
 
   useEffect(() => {
     currentSectionRef.current = section;
@@ -295,6 +297,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       maintenanceMode,
       maintenanceMessage,
+      ageVerification,
+      ageVerificationLoading,
+      refreshVerification: fetchVerification,
     }}>
       {children}
     </AppContext.Provider>
