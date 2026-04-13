@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      age_verifications: {
+        Row: {
+          age_category: string
+          birth_date: string
+          created_at: string
+          document_url: string | null
+          id: string
+          is_verified: boolean
+          selfie_url: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          age_category?: string
+          birth_date: string
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          is_verified?: boolean
+          selfie_url?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          age_category?: string
+          birth_date?: string
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          is_verified?: boolean
+          selfie_url?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: string
