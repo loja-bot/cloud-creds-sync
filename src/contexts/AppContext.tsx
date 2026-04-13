@@ -133,7 +133,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [authUser]);
 
+  const fetchVerification = useCallback(async () => {
+    if (!authUser) {
+      setAgeVerification(null);
+      setAgeVerificationLoading(false);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from("age_verifications")
+        .select("is_verified, age_category")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+      setAgeVerification(data as AgeVerification | null);
+    } catch (e) {
+      console.error("Failed to fetch verification:", e);
+    } finally {
+      setAgeVerificationLoading(false);
+    }
+  }, [authUser]);
+
   useEffect(() => {
+    fetchVerification();
+  }, [fetchVerification]);
+
+
     const fetchSettings = async () => {
       const { data } = await supabase
         .from("app_settings")
