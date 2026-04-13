@@ -158,6 +158,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [fetchVerification]);
 
 
+  useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
         .from("app_settings")
