@@ -6,6 +6,12 @@ import type { User } from "@supabase/supabase-js";
 
 type Section = "home" | "live" | "movies" | "series" | "favorites" | "player" | "maintenance";
 
+interface AgeVerification {
+  is_verified: boolean;
+  age_category: string;
+}
+
+
 interface PlayerState {
   url: string;
   title: string;
