@@ -50,6 +50,9 @@ interface AppContextType {
   signOut: () => void;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  ageVerification: AgeVerification | null;
+  ageVerificationLoading: boolean;
+  refreshVerification: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
