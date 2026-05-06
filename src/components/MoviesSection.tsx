@@ -4,8 +4,10 @@ import { getVodCategories, getVodStreams, getVodInfo, buildStreamUrl, type Categ
 import { addFavorite, removeFavorite, isFavorite } from "@/lib/storage";
 import { useBlockedContent } from "@/hooks/useBlockedContent";
 import ContentCard from "./ContentCard";
+import VideoBackground from "./VideoBackground";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Loader2, Play, X, Star, Search, AlertTriangle } from "lucide-react";
+import moviesBg from "../../public/videos/movies-bg.mp4.asset.json";
 
 const MoviesSection: React.FC = () => {
   const { credentials, openPlayer } = useApp();
@@ -84,6 +86,8 @@ const MoviesSection: React.FC = () => {
 
   return (
     <div className="flex h-full relative">
+      <VideoBackground src={moviesBg.url} opacity={0.22} />
+      <div className="relative z-10 flex w-full h-full">
       <div className="w-[200px] min-w-[200px] border-r border-border/50 overflow-y-auto hide-scrollbar p-3 space-y-1">
         <div className="flex items-center gap-2 px-3 py-2 mb-2">
           <Film className="w-4 h-4 text-primary" />
