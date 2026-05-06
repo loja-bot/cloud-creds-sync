@@ -57,7 +57,6 @@ const HomeSection: React.FC = () => {
       <div className="relative z-10 space-y-8">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
         <div className="flex items-center gap-3">
           <Tv className="w-8 h-8 text-primary" />
           <h1 className="font-display text-2xl font-bold text-primary tracking-wider">THAYSON TV</h1>
