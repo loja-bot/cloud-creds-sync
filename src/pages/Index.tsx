@@ -6,6 +6,7 @@ import LiveSection from "@/components/LiveSection";
 import MoviesSection from "@/components/MoviesSection";
 import SeriesSection from "@/components/SeriesSection";
 import FavoritesSection from "@/components/FavoritesSection";
+import ManualSection from "@/components/ManualSection";
 import VideoPlayer from "@/components/VideoPlayer";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
 import SplashScreen from "@/components/SplashScreen";
@@ -103,6 +104,7 @@ const AppContent = () => {
           {section === "movies" && <MoviesSection key="movies" />}
           {section === "series" && <SeriesSection key="series" />}
           {section === "favorites" && <FavoritesSection key="favorites" />}
+          {section === "manual" && <ManualSection key="manual" />}
         </AnimatePresence>
       </main>
       <InstaWatermark />

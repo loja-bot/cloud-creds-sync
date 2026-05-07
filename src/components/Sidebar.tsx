@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Tv, Radio, Film, Clapperboard, Heart, LogOut } from "lucide-react";
+import { Tv, Radio, Film, Clapperboard, Heart, LogOut, BookOpen } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { id: "movies" as const, label: "Filmes", icon: Film },
   { id: "series" as const, label: "Séries", icon: Clapperboard },
   { id: "favorites" as const, label: "Favoritos", icon: Heart },
+  { id: "manual" as const, label: "Manual", icon: BookOpen },
 ];
 
 const Sidebar: React.FC = () => {
