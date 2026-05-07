@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tv } from "lucide-react";
 import { playSplashSound } from "@/lib/splashSound";
-import introHero from "../../public/videos/intro-hero.mp4.asset.json";
+import introHero from "../../public/videos/intro-hero-v2.mp4.asset.json";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -10,7 +10,45 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [phase, setPhase] = useState<"video" | "brand" | "done">("video");
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const finishedRef = useRef(false);
+
+  // Try to play the video as soon as possible (mobile autoplay needs muted+playsInline)
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    const tryPlay = () => {
+      const p = v.play();
+      if (p && typeof p.then === "function") {
+        p.catch(() => {
+          // Will retry on user interaction
+        });
+      }
+    };
+    tryPlay();
+    const onCanPlay = () => { setVideoReady(true); tryPlay(); };
+    const onError = () => setVideoFailed(true);
+    v.addEventListener("canplay", onCanPlay);
+    v.addEventListener("loadeddata", onCanPlay);
+    v.addEventListener("error", onError);
+
+    const userKick = () => tryPlay();
+    document.addEventListener("touchstart", userKick, { once: true, passive: true });
+    document.addEventListener("click", userKick, { once: true });
+
+    return () => {
+      v.removeEventListener("canplay", onCanPlay);
+      v.removeEventListener("loadeddata", onCanPlay);
+      v.removeEventListener("error", onError);
+      document.removeEventListener("touchstart", userKick);
+      document.removeEventListener("click", userKick);
+    };
+  }, []);
 
   useEffect(() => {
     const retry = () => { try { playSplashSound(); } catch {} };
@@ -18,21 +56,21 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
     document.addEventListener("touchstart", retry, { once: true });
     document.addEventListener("keydown", retry, { once: true });
 
-    // Phase 1: hero video (4.2s)
+    // Phase 1: hero video (8.5s — let the longer cinematic play)
     const t1 = setTimeout(() => {
       try { playSplashSound(); } catch {}
       setPhase("brand");
-    }, 4200);
+    }, 8500);
     // Phase 2: brand (2.4s)
-    const t2 = setTimeout(() => setPhase("done"), 6600);
+    const t2 = setTimeout(() => setPhase("done"), 10900);
     // Finish
     const t3 = setTimeout(() => {
       if (!finishedRef.current) { finishedRef.current = true; onFinish(); }
-    }, 7200);
+    }, 11500);
     // Safety
     const t4 = setTimeout(() => {
       if (!finishedRef.current) { finishedRef.current = true; onFinish(); }
-    }, 9000);
+    }, 13000);
 
     return () => {
       [t1, t2, t3, t4].forEach(clearTimeout);
@@ -64,14 +102,41 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
             transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
+            {/* Animated gradient fallback so there is never a black screen on mobile */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 30% 30%, hsla(135,100%,50%,0.25), transparent 60%), radial-gradient(circle at 70% 70%, hsla(135,100%,40%,0.18), transparent 55%), #000",
+              }}
+            />
             <video
+              ref={videoRef}
               src={introHero.url}
               autoPlay
               muted
+              loop={false}
               playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ filter: "saturate(1.25) contrast(1.08)" }}
+              // @ts-ignore
+              webkit-playsinline="true"
+              preload="auto"
+              controls={false}
+              disablePictureInPicture
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+              style={{
+                opacity: videoReady && !videoFailed ? 1 : 0,
+                filter: "saturate(1.25) contrast(1.08)",
+              }}
             />
+            {/* Loader while video buffers on mobile */}
+            {!videoReady && !videoFailed && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                  <p className="text-primary/80 text-xs tracking-[0.4em] font-display">CARREGANDO</p>
+                </div>
+              </div>
+            )}
             {/* Cinematic letterbox bars */}
             <motion.div
               initial={{ height: "20%" }}
