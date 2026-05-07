@@ -46,7 +46,7 @@ const ManualSection: React.FC = () => {
           muted
           loop
           playsInline
-          // @ts-expect-error vendor attr
+          // @ts-ignore
           webkit-playsinline="true"
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover"

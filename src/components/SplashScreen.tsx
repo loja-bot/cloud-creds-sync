@@ -117,7 +117,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
               muted
               loop={false}
               playsInline
-              // @ts-expect-error — vendor attr for iOS inline playback
+              // @ts-ignore
               webkit-playsinline="true"
               preload="auto"
               controls={false}
