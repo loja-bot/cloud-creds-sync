@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Tv } from "lucide-react";
 import { playSplashSound } from "@/lib/splashSound";
+import introVideo from "../../public/videos/intro.mp4.asset.json";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -58,6 +59,16 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center overflow-hidden">
+      {/* Cinematic intro video */}
+      <video
+        src={introVideo.url}
+        autoPlay
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: 0.55, filter: "saturate(1.3) contrast(1.1)" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/40 to-background/95" />
       {[1, 2, 3].map((i) => (
         <motion.div
           key={i}
