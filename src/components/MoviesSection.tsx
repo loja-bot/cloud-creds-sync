@@ -169,6 +169,7 @@ const MoviesSection: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };
