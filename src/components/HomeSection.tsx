@@ -59,12 +59,22 @@ const HomeSection: React.FC = () => {
       <Logos3D count={22} density={0.32} />
       <div className="relative z-10 space-y-8">
       {/* Welcome */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
-        <div className="flex items-center gap-3">
-          <Tv className="w-8 h-8 text-primary" />
-          <h1 className="font-display text-2xl font-bold text-primary tracking-wider">THAYSON TV</h1>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
+        <motion.img
+          src={tv3d}
+          alt=""
+          loading="lazy"
+          width={96}
+          height={96}
+          className="w-20 h-20 md:w-24 md:h-24 object-contain"
+          style={{ filter: "drop-shadow(0 0 24px hsla(135,100%,50%,0.55))" }}
+          animate={{ y: [0, -6, 0], rotate: [-3, 3, -3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div className="space-y-1">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-primary tracking-wider">THAYSON TV</h1>
+          <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
         </div>
-        <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
       </motion.div>
 
       {/* Quick links */}
@@ -76,17 +86,28 @@ const HomeSection: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             onClick={() => navigate(link.id)}
-            className="tv-focusable p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-all text-left space-y-2"
+            className="tv-focusable relative overflow-hidden p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:border-primary/50 transition-all text-left space-y-2 group"
           >
-            <link.icon className="w-6 h-6 text-primary" />
-            <div>
+            <img
+              src={play3d}
+              alt=""
+              loading="lazy"
+              className="absolute -right-3 -bottom-3 w-16 h-16 object-contain opacity-30 group-hover:opacity-70 transition-opacity"
+              style={{ filter: "drop-shadow(0 0 14px hsla(135,100%,50%,0.6))" }}
+            />
+            <link.icon className="w-6 h-6 text-primary relative z-10" />
+            <div className="relative z-10">
               <p className="text-foreground font-semibold text-sm">{link.label}</p>
               <p className="text-muted-foreground text-xs">{link.desc}</p>
             </div>
           </motion.button>
         ))}
       </div>
+
+      {/* TV Wall — live channels showcase */}
+      <TvWall />
 
       {/* Continue watching */}
       {continueItems.length > 0 && (
