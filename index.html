@@ -2,37 +2,39 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Thayson TV</title>
-    <meta name="description" content="Thayson TV - Seu aplicativo IPTV para Smart TVs com interface moderna">
-    <meta name="theme-color" content="#050505" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Thayson TV — Filmes, Séries e Canais ao Vivo</title>
+    <meta name="description" content="Thayson TV: app IPTV em tela cheia com filmes, séries, desenhos e canais ao vivo em alta qualidade. Instale como app no celular." />
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#00ff66" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#00ff66" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="Thayson TV" />
+
+    <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Thayson TV" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
-    
-    
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+
     <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/16a431a7-6230-42e2-916a-d48bfbe39403/id-preview-80151249--a9cd586b-1ebf-44a5-9248-525804a5a808.lovable.app-1773630095955.png">
-  <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/16a431a7-6230-42e2-916a-d48bfbe39403/id-preview-80151249--a9cd586b-1ebf-44a5-9248-525804a5a808.lovable.app-1773630095955.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta property="og:title" content="Thayson TV">
-  <meta name="twitter:title" content="Thayson TV">
-  <meta property="og:description" content="Thayson TV - Seu aplicativo IPTV para Smart TVs com interface moderna">
-  <meta name="twitter:description" content="Thayson TV - Seu aplicativo IPTV para Smart TVs com interface moderna">
-</head>
-
+    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/16a431a7-6230-42e2-916a-d48bfbe39403/id-preview-80151249--a9cd586b-1ebf-44a5-9248-525804a5a808.lovable.app-1773630095955.png" />
+    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/16a431a7-6230-42e2-916a-d48bfbe39403/id-preview-80151249--a9cd586b-1ebf-44a5-9248-525804a5a808.lovable.app-1773630095955.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:title" content="Thayson TV" />
+    <meta name="twitter:title" content="Thayson TV" />
+    <meta property="og:description" content="Thayson TV — Filmes, séries, desenhos e canais ao vivo em tela cheia." />
+    <meta name="twitter:description" content="Thayson TV — Filmes, séries, desenhos e canais ao vivo em tela cheia." />
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('SW registered:', reg.scope))
-            .catch(err => console.log('SW registration failed:', err));
-        });
-      }
-    </script>
   </body>
 </html>
