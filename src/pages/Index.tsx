@@ -18,13 +18,25 @@ import { AnimatePresence } from "framer-motion";
 import { Loader2, Tv } from "lucide-react";
 import InstaWatermark from "@/components/InstaWatermark";
 import SupportChat from "@/components/SupportChat";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import { requestFullscreenAndLandscape, isStandalone } from "@/lib/pwa";
 
 const AppContent = () => {
   const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage, ageVerification, ageVerificationLoading } = useApp();
   const [splashDone, setSplashDone] = useState(false);
 
   if (!splashDone) {
-    return <SplashScreen onFinish={() => setSplashDone(true)} />;
+    return (
+      <SplashScreen
+        onFinish={() => {
+          setSplashDone(true);
+          // When launched as installed PWA, lock landscape + fullscreen
+          if (isStandalone()) {
+            requestFullscreenAndLandscape();
+          }
+        }}
+      />
+    );
   }
 
   // Auth loading
@@ -109,6 +121,7 @@ const AppContent = () => {
       </main>
       <InstaWatermark />
       <SupportChat />
+      <PwaInstallPrompt />
     </div>
   );
 };
