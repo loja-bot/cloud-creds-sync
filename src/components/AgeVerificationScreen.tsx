@@ -124,16 +124,7 @@ const AgeVerificationScreen: React.FC = () => {
         </div>
 
         {/* Birth Date */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Data de Nascimento</label>
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            max={new Date().toISOString().split("T")[0]}
-            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground text-sm focus:border-primary/50 focus:outline-none transition-colors"
-          />
-        </div>
+        <BirthDateSelector value={birthDate} onChange={setBirthDate} />
 
         {/* Selfie Upload */}
         <div className="space-y-2">
