@@ -142,7 +142,6 @@ const AgeVerificationScreen: React.FC = () => {
             ref={selfieInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0], setSelfieFile, setSelfiePreview)}
           />
