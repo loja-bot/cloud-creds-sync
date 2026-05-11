@@ -142,7 +142,6 @@ const AgeVerificationScreen: React.FC = () => {
             ref={selfieInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0], setSelfieFile, setSelfiePreview)}
           />
@@ -156,7 +155,7 @@ const AgeVerificationScreen: React.FC = () => {
               <Camera className="w-5 h-5 text-muted-foreground" />
             )}
             <span className={selfieFile ? "text-foreground" : "text-muted-foreground"}>
-              {selfieFile ? selfieFile.name : "Tirar foto ou selecionar"}
+              {selfieFile ? selfieFile.name : "Selecionar da galeria"}
             </span>
           </button>
         </div>
@@ -168,7 +167,6 @@ const AgeVerificationScreen: React.FC = () => {
             ref={docInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0], setDocumentFile, setDocumentPreview)}
           />
