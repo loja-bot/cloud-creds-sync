@@ -4,6 +4,7 @@ import { Camera, FileImage, Upload, Loader2, ShieldCheck, AlertTriangle } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
+import BirthDateSelector from "./BirthDateSelector";
 
 const AgeVerificationScreen: React.FC = () => {
   const { authUser, refreshVerification } = useApp();
