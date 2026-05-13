@@ -3,14 +3,9 @@ import { useApp } from "@/contexts/AppContext";
 import { getContinueWatching, getFavorites, type ContinueItem, type FavoriteItem } from "@/lib/storage";
 import { buildStreamUrl } from "@/lib/xtream";
 import ContentCard from "./ContentCard";
-import VideoBackground from "./VideoBackground";
-import Logos3D from "./Logos3D";
 import TvWall from "./TvWall";
-import tv3d from "@/assets/logos/tv3d.png";
-import play3d from "@/assets/logos/play3d.png";
 import { motion } from "framer-motion";
-import { Clock, Heart, Tv, Radio, Film, Clapperboard } from "lucide-react";
-import homeBg from "../../public/videos/home-bg.mp4.asset.json";
+import { Clock, Heart, Radio, Film, Clapperboard } from "lucide-react";
 
 const HomeSection: React.FC = () => {
   const { credentials, navigate, openPlayer } = useApp();
@@ -55,8 +50,6 @@ const HomeSection: React.FC = () => {
 
   return (
     <div className="relative h-full overflow-y-auto hide-scrollbar p-6 space-y-8">
-      <VideoBackground src={homeBg.url} opacity={0.28} />
-      <Logos3D count={22} density={0.32} />
       <div className="relative z-10 space-y-8">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
