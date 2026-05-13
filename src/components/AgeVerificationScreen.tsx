@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Camera, FileImage, Upload, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Camera, FileImage, Upload, Loader2, ShieldCheck, AlertTriangle, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
