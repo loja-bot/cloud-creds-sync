@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { Star, Heart } from "lucide-react";
 
 interface ContentCardProps {
@@ -22,11 +21,9 @@ const ContentCard: React.FC<ContentCardProps> = ({
   aspectRatio = "poster",
 }) => {
   return (
-    <motion.div
+    <div
       data-focusable
       onClick={onClick}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
       className={`tv-focusable card-shine relative rounded-xl overflow-hidden cursor-pointer bg-card border border-transparent group ${
         aspectRatio === "poster" ? "aspect-[2/3]" : "aspect-video"
       }`}
@@ -67,7 +64,7 @@ const ContentCard: React.FC<ContentCardProps> = ({
           <Heart className={`w-3.5 h-3.5 ${isFavorite ? "text-destructive fill-destructive" : "text-foreground"}`} />
         </button>
       )}
-    </motion.div>
+    </div>
   );
 };
 
