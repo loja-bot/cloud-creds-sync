@@ -222,6 +222,16 @@ const AgeVerificationScreen: React.FC = () => {
           )}
         </button>
 
+        {/* Skip */}
+        <button
+          onClick={handleSkip}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 font-medium text-xs transition-all disabled:opacity-50"
+        >
+          <SkipForward className="w-3.5 h-3.5" />
+          Pular verificação
+        </button>
+
         <p className="text-muted-foreground text-[10px] text-center leading-relaxed">
           Seus dados são protegidos e utilizados apenas para verificação de idade conforme a legislação.
         </p>
