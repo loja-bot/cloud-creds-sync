@@ -3,14 +3,9 @@ import { useApp } from "@/contexts/AppContext";
 import { getContinueWatching, getFavorites, type ContinueItem, type FavoriteItem } from "@/lib/storage";
 import { buildStreamUrl } from "@/lib/xtream";
 import ContentCard from "./ContentCard";
-import VideoBackground from "./VideoBackground";
-import Logos3D from "./Logos3D";
 import TvWall from "./TvWall";
-import tv3d from "@/assets/logos/tv3d.png";
-import play3d from "@/assets/logos/play3d.png";
 import { motion } from "framer-motion";
-import { Clock, Heart, Tv, Radio, Film, Clapperboard } from "lucide-react";
-import homeBg from "../../public/videos/home-bg.mp4.asset.json";
+import { Clock, Heart, Radio, Film, Clapperboard } from "lucide-react";
 
 const HomeSection: React.FC = () => {
   const { credentials, navigate, openPlayer } = useApp();
@@ -55,22 +50,9 @@ const HomeSection: React.FC = () => {
 
   return (
     <div className="relative h-full overflow-y-auto hide-scrollbar p-6 space-y-8">
-      <VideoBackground src={homeBg.url} opacity={0.28} />
-      <Logos3D count={22} density={0.32} />
       <div className="relative z-10 space-y-8">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-        <motion.img
-          src={tv3d}
-          alt=""
-          loading="lazy"
-          width={96}
-          height={96}
-          className="w-20 h-20 md:w-24 md:h-24 object-contain"
-          style={{ filter: "drop-shadow(0 0 24px hsla(135,100%,50%,0.55))" }}
-          animate={{ y: [0, -6, 0], rotate: [-3, 3, -3] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        />
         <div className="space-y-1">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-primary tracking-wider">THAYSON TV</h1>
           <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
@@ -90,13 +72,6 @@ const HomeSection: React.FC = () => {
             onClick={() => navigate(link.id)}
             className="tv-focusable relative overflow-hidden p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:border-primary/50 transition-all text-left space-y-2 group"
           >
-            <img
-              src={play3d}
-              alt=""
-              loading="lazy"
-              className="absolute -right-3 -bottom-3 w-16 h-16 object-contain opacity-30 group-hover:opacity-70 transition-opacity"
-              style={{ filter: "drop-shadow(0 0 14px hsla(135,100%,50%,0.6))" }}
-            />
             <link.icon className="w-6 h-6 text-primary relative z-10" />
             <div className="relative z-10">
               <p className="text-foreground font-semibold text-sm">{link.label}</p>
