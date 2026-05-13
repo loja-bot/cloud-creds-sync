@@ -3,8 +3,6 @@ import { useApp } from "@/contexts/AppContext";
 import { getContinueWatching, getFavorites, type ContinueItem, type FavoriteItem } from "@/lib/storage";
 import { buildStreamUrl } from "@/lib/xtream";
 import ContentCard from "./ContentCard";
-import TvWall from "./TvWall";
-import { motion } from "framer-motion";
 import { Clock, Heart, Radio, Film, Clapperboard } from "lucide-react";
 
 const HomeSection: React.FC = () => {
@@ -19,7 +17,6 @@ const HomeSection: React.FC = () => {
 
   const handlePlayContinue = (item: ContinueItem) => {
     if (!credentials) return;
-    // Use stored extension or default based on type
     const ext = item.extension || (item.type === "live" ? "ts" : "mp4");
     const url = buildStreamUrl(credentials, item.id, item.type, ext);
     openPlayer({
@@ -51,89 +48,82 @@ const HomeSection: React.FC = () => {
   return (
     <div className="relative h-full overflow-y-auto hide-scrollbar p-6 space-y-8">
       <div className="relative z-10 space-y-8">
-      {/* Welcome */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-        <div className="space-y-1">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-primary tracking-wider">THAYSON TV</h1>
-          <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
-        </div>
-      </motion.div>
-
-      {/* Quick links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {quickLinks.map((link, i) => (
-          <motion.button
-            key={link.id}
-            data-focusable
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            whileHover={{ scale: 1.03, y: -2 }}
-            onClick={() => navigate(link.id)}
-            className="tv-focusable relative overflow-hidden p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:border-primary/50 transition-all text-left space-y-2 group"
-          >
-            <link.icon className="w-6 h-6 text-primary relative z-10" />
-            <div className="relative z-10">
-              <p className="text-foreground font-semibold text-sm">{link.label}</p>
-              <p className="text-muted-foreground text-xs">{link.desc}</p>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-
-      {/* TV Wall — live channels showcase */}
-      <TvWall />
-
-      {/* Continue watching */}
-      {continueItems.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
-            <h2 className="font-display text-sm font-bold text-foreground tracking-wider">CONTINUAR ASSISTINDO</h2>
+        {/* Welcome */}
+        <div className="flex items-center gap-4">
+          <div className="space-y-1">
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-primary tracking-wider">THAYSON TV</h1>
+            <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {continueItems.slice(0, 6).map((item) => (
-              <div key={`${item.type}-${item.id}`} className="relative">
+        </div>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {quickLinks.map((link) => (
+            <button
+              key={link.id}
+              data-focusable
+              onClick={() => navigate(link.id)}
+              className="tv-focusable relative overflow-hidden p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:border-primary/50 hover:bg-card transition-all text-left space-y-2 group"
+            >
+              <link.icon className="w-6 h-6 text-primary relative z-10" />
+              <div className="relative z-10">
+                <p className="text-foreground font-semibold text-sm">{link.label}</p>
+                <p className="text-muted-foreground text-xs">{link.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Continue watching */}
+        {continueItems.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <h2 className="font-display text-sm font-bold text-foreground tracking-wider">CONTINUAR ASSISTINDO</h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {continueItems.slice(0, 6).map((item) => (
+                <div key={`${item.type}-${item.id}`} className="relative">
+                  <ContentCard
+                    title={item.name}
+                    image={item.icon || "/placeholder.svg"}
+                    onClick={() => handlePlayContinue(item)}
+                    aspectRatio="landscape"
+                  />
+                  {/* Progress indicator */}
+                  {item.progress && item.duration && item.duration > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-secondary/60 rounded-b">
+                      <div
+                        className="h-full bg-primary rounded-b"
+                        style={{ width: `${Math.min((item.progress / item.duration) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Favorites */}
+        {favorites.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4 text-primary" />
+              <h2 className="font-display text-sm font-bold text-foreground tracking-wider">FAVORITOS</h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {favorites.slice(0, 6).map((item) => (
                 <ContentCard
+                  key={`${item.type}-${item.id}`}
                   title={item.name}
                   image={item.icon || "/placeholder.svg"}
-                  onClick={() => handlePlayContinue(item)}
-                  aspectRatio="landscape"
+                  onClick={() => handlePlayFavorite(item)}
                 />
-                {/* Progress indicator */}
-                {item.progress && item.duration && item.duration > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-secondary/60 rounded-b">
-                    <div
-                      className="h-full bg-primary rounded-b"
-                      style={{ width: `${Math.min((item.progress / item.duration) * 100, 100)}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Favorites */}
-      {favorites.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Heart className="w-4 h-4 text-primary" />
-            <h2 className="font-display text-sm font-bold text-foreground tracking-wider">FAVORITOS</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {favorites.slice(0, 6).map((item) => (
-              <ContentCard
-                key={`${item.type}-${item.id}`}
-                title={item.name}
-                image={item.icon || "/placeholder.svg"}
-                onClick={() => handlePlayFavorite(item)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
