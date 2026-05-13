@@ -53,17 +53,6 @@ const HomeSection: React.FC = () => {
       <div className="relative z-10 space-y-8">
       {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-        <motion.img
-          src={tv3d}
-          alt=""
-          loading="lazy"
-          width={96}
-          height={96}
-          className="w-20 h-20 md:w-24 md:h-24 object-contain"
-          style={{ filter: "drop-shadow(0 0 24px hsla(135,100%,50%,0.55))" }}
-          animate={{ y: [0, -6, 0], rotate: [-3, 3, -3] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        />
         <div className="space-y-1">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-primary tracking-wider">THAYSON TV</h1>
           <p className="text-muted-foreground text-sm">Bem-vindo ao seu centro de entretenimento</p>
