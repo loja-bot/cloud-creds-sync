@@ -83,13 +83,6 @@ const HomeSection: React.FC = () => {
             onClick={() => navigate(link.id)}
             className="tv-focusable relative overflow-hidden p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:border-primary/50 transition-all text-left space-y-2 group"
           >
-            <img
-              src={play3d}
-              alt=""
-              loading="lazy"
-              className="absolute -right-3 -bottom-3 w-16 h-16 object-contain opacity-30 group-hover:opacity-70 transition-opacity"
-              style={{ filter: "drop-shadow(0 0 14px hsla(135,100%,50%,0.6))" }}
-            />
             <link.icon className="w-6 h-6 text-primary relative z-10" />
             <div className="relative z-10">
               <p className="text-foreground font-semibold text-sm">{link.label}</p>
