@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Camera, FileImage, Upload, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Camera, FileImage, Upload, Loader2, ShieldCheck, AlertTriangle, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
@@ -105,6 +105,24 @@ const AgeVerificationScreen: React.FC = () => {
     }
   };
 
+  const handleSkip = async () => {
+    if (!authUser) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: insertErr } = await supabase
+        .from("age_verifications")
+        .upsert({ user_id: authUser.id, birth_date: "2000-01-01" }, { onConflict: "user_id" });
+      if (insertErr) throw new Error(insertErr.message);
+      toast.success("Verificação pulada — acesso liberado.");
+      refreshVerification();
+    } catch (e: any) {
+      setError("Não foi possível pular: " + (e.message || "tente novamente."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-background flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
@@ -133,7 +151,7 @@ const AgeVerificationScreen: React.FC = () => {
           <input
             ref={selfieInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0], setSelfieFile, setSelfiePreview)}
           />
@@ -158,7 +176,7 @@ const AgeVerificationScreen: React.FC = () => {
           <input
             ref={docInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0], setDocumentFile, setDocumentPreview)}
           />
@@ -202,6 +220,16 @@ const AgeVerificationScreen: React.FC = () => {
               Enviar Verificação
             </>
           )}
+        </button>
+
+        {/* Skip */}
+        <button
+          onClick={handleSkip}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 font-medium text-xs transition-all disabled:opacity-50"
+        >
+          <SkipForward className="w-3.5 h-3.5" />
+          Pular verificação
         </button>
 
         <p className="text-muted-foreground text-[10px] text-center leading-relaxed">
