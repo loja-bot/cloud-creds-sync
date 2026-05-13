@@ -105,6 +105,24 @@ const AgeVerificationScreen: React.FC = () => {
     }
   };
 
+  const handleSkip = async () => {
+    if (!authUser) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: insertErr } = await supabase
+        .from("age_verifications")
+        .upsert({ user_id: authUser.id, birth_date: "2000-01-01" }, { onConflict: "user_id" });
+      if (insertErr) throw new Error(insertErr.message);
+      toast.success("Verificação pulada — acesso liberado.");
+      refreshVerification();
+    } catch (e: any) {
+      setError("Não foi possível pular: " + (e.message || "tente novamente."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-background flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
