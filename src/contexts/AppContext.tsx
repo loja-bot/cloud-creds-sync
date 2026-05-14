@@ -251,7 +251,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
-      if (currentSectionRef.current !== "player") {
+      if ((currentSectionRef.current as Section) !== "player") {
         setCredentials(null);
         setSection("maintenance");
       }
