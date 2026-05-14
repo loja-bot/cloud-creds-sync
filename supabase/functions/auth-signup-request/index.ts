@@ -1,6 +1,6 @@
 import {
   corsHeaders, json, getIp, verifyTurnstile, checkRateLimit,
-  hashPassword, generateCode, sendCodeEmail, supabaseAdmin,
+  generateCode, sendCodeEmail, supabaseAdmin,
 } from '../_shared/auth-utils.ts';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 
@@ -25,23 +25,43 @@ Deno.serve(async (req) => {
     }
 
     const supa = supabaseAdmin();
+
+    // Check if confirmed user already exists
     const { data: existing } = await supa.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (existing?.users?.some((u) => u.email?.toLowerCase() === email.toLowerCase())) {
+    const found = existing?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (found && found.email_confirmed_at) {
       return json({ error: 'E-mail já cadastrado. Faça login.' }, 409);
     }
+    // Remove any unconfirmed account so we can recreate fresh
+    if (found && !found.email_confirmed_at) {
+      await supa.auth.admin.deleteUser(found.id);
+    }
 
+    // Create unconfirmed user with the real password
+    const { data: created, error: createErr } = await supa.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password,
+      email_confirm: false,
+    });
+    if (createErr || !created.user) {
+      return json({ error: createErr?.message || 'Falha ao criar usuário.' }, 500);
+    }
+
+    // Generate + store verification code
     const code = generateCode();
     const codeHash = await bcrypt.hash(code, 8);
-    const passwordHash = await hashPassword(password);
 
     await supa.from('signup_verifications').delete().ilike('email', email);
     const { error: insErr } = await supa.from('signup_verifications').insert({
       email: email.toLowerCase(),
-      password_hash: passwordHash,
+      password_hash: created.user.id, // store user_id for verify step
       code_hash: codeHash,
       ip_address: ip,
     });
-    if (insErr) return json({ error: 'Falha ao registrar verificação.' }, 500);
+    if (insErr) {
+      await supa.auth.admin.deleteUser(created.user.id);
+      return json({ error: 'Falha ao registrar verificação.' }, 500);
+    }
 
     await sendCodeEmail(email, code);
     return json({ ok: true, message: 'Código enviado para seu e-mail.' });

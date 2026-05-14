@@ -1,12 +1,13 @@
 import {
-  corsHeaders, json, getIp, checkRateLimit, supabaseAdmin, comparePassword,
+  corsHeaders, json, getIp, checkRateLimit, supabaseAdmin,
 } from '../_shared/auth-utils.ts';
+import bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const { email, code, password } = await req.json();
-    if (!email || !code || !password) return json({ error: 'Dados inválidos.' }, 400);
+    const { email, code } = await req.json();
+    if (!email || !code) return json({ error: 'Dados inválidos.' }, 400);
 
     const ip = getIp(req);
     if (!(await checkRateLimit(ip, 'signup_verify', 10, 60))) {
@@ -32,25 +33,18 @@ Deno.serve(async (req) => {
       return json({ error: 'Tentativas excedidas. Cadastre novamente.' }, 429);
     }
 
-    const ok = await comparePassword(String(code), rec.code_hash);
+    const ok = await bcrypt.compare(String(code), rec.code_hash);
     if (!ok) {
       await supa.from('signup_verifications').update({ attempts: rec.attempts + 1 }).eq('id', rec.id);
       return json({ error: 'Código incorreto.' }, 401);
     }
 
-    const { data: created, error: createErr } = await supa.auth.admin.createUser({
-      email: rec.email,
-      password: password,
-      email_confirm: true,
-    });
-
-    if (createErr) {
-      return json({ error: createErr.message }, 400);
-    }
+    const userId = rec.password_hash; // we stored user_id here
+    const { error: updErr } = await supa.auth.admin.updateUserById(userId, { email_confirm: true });
+    if (updErr) return json({ error: 'Falha ao confirmar conta.' }, 500);
 
     await supa.from('signup_verifications').delete().eq('id', rec.id);
-
-    return json({ ok: true, user: created.user });
+    return json({ ok: true, message: 'Conta verificada! Faça login.' });
   } catch (e) {
     console.error('signup-verify error', e);
     return json({ error: 'Erro interno.' }, 500);
