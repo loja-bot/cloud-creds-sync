@@ -195,6 +195,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchCredentials = useCallback(async () => {
+    // CRITICAL: never disrupt playback. Skip refetch while watching.
+    if (currentSectionRef.current === "player") {
+      setLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("iptv_credentials")
@@ -207,47 +212,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (!data) {
-        setCredentials(null);
+        setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
-        setSection("maintenance");
-        setExpiresAt(null);
+        setSection((s) => (s === "maintenance" ? s : "maintenance"));
+        setExpiresAt((prev) => (prev === null ? prev : null));
         return;
       }
 
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        setCredentials(null);
+        setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
-        setSection("maintenance");
-        setExpiresAt(data.expires_at);
+        setSection((s) => (s === "maintenance" ? s : "maintenance"));
+        setExpiresAt((prev) => (prev === data.expires_at ? prev : data.expires_at));
         return;
       }
 
-      const newCreds = {
-        host: data.host,
-        username: data.username,
-        password: data.password,
-      };
+      // Only update credentials if values actually changed (avoid re-renders during playback)
+      setCredentials((prev) => {
+        if (
+          prev &&
+          prev.host === data.host &&
+          prev.username === data.username &&
+          prev.password === data.password
+        ) {
+          return prev;
+        }
+        return { host: data.host, username: data.username, password: data.password };
+      });
+      setExpiresAt((prev) => (prev === data.expires_at ? prev : data.expires_at));
 
-      const wasInMaintenance = wasInMaintenanceRef.current;
-      setCredentials(newCreds);
-      setExpiresAt(data.expires_at);
-
-      if (wasInMaintenance) {
+      if (wasInMaintenanceRef.current) {
         wasInMaintenanceRef.current = false;
         toast.success("Playlist atualizada!", {
           description: "Nova playlist detectada. Aproveite!",
           duration: 5000,
         });
-        setSection("home");
+        setSection((s) => (s === "maintenance" ? "home" : s));
       }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
-      setCredentials(null);
-      setSection("maintenance");
+      if (currentSectionRef.current !== "player") {
+        setCredentials(null);
+        setSection("maintenance");
+      }
     } finally {
       setLoading(false);
     }
-  }, [previousSection]);
+  }, []);
 
   useEffect(() => {
     if (authUser && appUser && !appUser.is_banned) {
@@ -263,14 +274,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         schema: "public",
         table: "iptv_credentials",
       }, () => {
-        if (authUser && appUser && !appUser.is_banned) {
+        // Don't disturb playback
+        if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
           fetchCredentials();
         }
       })
       .subscribe();
 
     const interval = setInterval(() => {
-      if (authUser && appUser && !appUser.is_banned) {
+      if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
         fetchCredentials();
       }
     }, 60000);
