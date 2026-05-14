@@ -1,1 +1,13 @@
 project_id = "yvceiwcfqxzvttjrmzgj"
+
+[functions.auth-config]
+verify_jwt = false
+
+[functions.auth-signup-request]
+verify_jwt = false
+
+[functions.auth-signup-verify]
+verify_jwt = false
+
+[functions.auth-login]
+verify_jwt = false
