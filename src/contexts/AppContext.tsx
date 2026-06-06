@@ -271,18 +271,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const navigate = useCallback((s: Section) => {
     setPreviousSection(currentSectionRef.current);
+    currentSectionRef.current = s;
     setSection(s);
   }, []);
 
   const openPlayer = useCallback((state: PlayerState) => {
     setPreviousSection(currentSectionRef.current);
     setPlayerState(state);
+    currentSectionRef.current = "player";
     setSection("player");
   }, []);
 
   const closePlayer = useCallback(() => {
     setPlayerState(null);
-    setSection((prev) => (prev === "player" ? (previousSection === "player" ? "home" : previousSection) : prev));
+    setSection((prev) => {
+      const next = prev === "player" ? (previousSection === "player" ? "home" : previousSection) : prev;
+      currentSectionRef.current = next;
+      return next;
+    });
   }, [previousSection]);
 
   const signOut = useCallback(async () => {
@@ -290,6 +296,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthUser(null);
     setAppUser(null);
     setCredentials(null);
+    currentSectionRef.current = "home";
     setSection("home");
   }, []);
 
