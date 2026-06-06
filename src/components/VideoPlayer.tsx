@@ -458,44 +458,18 @@ const VideoPlayer: React.FC = () => {
             closePlayer();
             return;
           }
-          // Attempt silent recovery — reload current source and resume
-          try {
-            const resumeAt = video.currentTime;
-            if (playerRef.current) {
-              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
-            } else {
-              video.load();
-              const onReady = () => {
-                if (!isLive && resumeAt > 0) {
-                  try { video.currentTime = resumeAt; } catch {}
-                }
-                video.play().catch(() => {});
-                video.removeEventListener("loadedmetadata", onReady);
-              };
-              video.addEventListener("loadedmetadata", onReady);
-            }
-          } catch {}
+          recoverPlaybackRef.current();
         }}
         onError={() => {
           // Swallow transient media errors — never auto-close the player.
-          const video = videoRef.current;
-          if (!video || !playerState) return;
-          const resumeAt = video.currentTime;
-          try {
-            if (playerRef.current) {
-              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
-            } else {
-              video.load();
-              const onReady = () => {
-                if (playerState.type !== "live" && resumeAt > 0) {
-                  try { video.currentTime = resumeAt; } catch {}
-                }
-                video.play().catch(() => {});
-                video.removeEventListener("loadedmetadata", onReady);
-              };
-              video.addEventListener("loadedmetadata", onReady);
-            }
-          } catch {}
+          recoverPlaybackRef.current();
+        }}
+        onProgress={() => {
+          lastProgressAtRef.current = Date.now();
+        }}
+        onPlaying={() => {
+          lastProgressAtRef.current = Date.now();
+          setPlaying(true);
         }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}

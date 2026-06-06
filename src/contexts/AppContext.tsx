@@ -131,9 +131,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProfile();
-
-    const interval = setInterval(fetchProfile, 30000);
-    return () => clearInterval(interval);
   }, [authUser]);
 
   const fetchVerification = useCallback(async () => {
