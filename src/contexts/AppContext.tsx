@@ -53,6 +53,7 @@ interface AppContextType {
   ageVerification: AgeVerification | null;
   ageVerificationLoading: boolean;
   refreshVerification: () => void;
+  refreshCredentials: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -100,6 +101,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!authUser) return;
 
     const fetchProfile = async () => {
+      if (currentSectionRef.current === "player") return;
+
       const { data } = await supabase
         .from("app_users")
         .select("*")
@@ -208,6 +211,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!data) {
         setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
+        currentSectionRef.current = "maintenance";
         setSection((s) => (s === "maintenance" ? s : "maintenance"));
         setExpiresAt((prev) => (prev === null ? prev : null));
         return;
@@ -216,6 +220,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
+        currentSectionRef.current = "maintenance";
         setSection((s) => (s === "maintenance" ? s : "maintenance"));
         setExpiresAt((prev) => (prev === data.expires_at ? prev : data.expires_at));
         return;
@@ -241,12 +246,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           description: "Nova playlist detectada. Aproveite!",
           duration: 5000,
         });
+        currentSectionRef.current = "home";
         setSection((s) => (s === "maintenance" ? "home" : s));
       }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
       if ((currentSectionRef.current as Section) !== "player") {
         setCredentials(null);
+        currentSectionRef.current = "maintenance";
         setSection("maintenance");
       }
     } finally {
