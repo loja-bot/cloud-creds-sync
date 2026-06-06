@@ -201,15 +201,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const { data, error } = await supabase
-        .from("iptv_credentials")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
+      const { data: resp, error } = await supabase.functions.invoke("get-iptv-credentials", { body: {} });
       if (error) throw error;
+      const data = (resp as { data?: { host: string; username: string; password: string; expires_at: string | null } | null })?.data ?? null;
 
       if (!data) {
         setCredentials((prev) => (prev === null ? prev : null));
