@@ -143,17 +143,19 @@ const VideoPlayer: React.FC = () => {
     const proxiedUrl = `${proxyBase}?streamUrl=${encodeURIComponent(url)}`;
     const video = videoRef.current;
     const isLive = playerState.type === "live";
+    directUrlRef.current = url;
     playbackUrlRef.current = proxiedUrl;
+    activeStreamModeRef.current = "direct";
 
     // Cleanup previous player
     destroyMpegtsPlayer();
     if (stallTimer.current) clearInterval(stallTimer.current);
 
     if (isLive && mpegts.isSupported()) {
-      createLivePlayer(proxiedUrl);
+      createLivePlayer(url, "direct");
     } else {
-      // For VOD (movies/series) use native <video> - supports Range seeking
-      video.src = proxiedUrl;
+      // For VOD (movies/series) use native <video> - direct stream avoids edge-function timeouts.
+      video.src = url;
       video.load();
       video.play().catch(() => {});
     }
