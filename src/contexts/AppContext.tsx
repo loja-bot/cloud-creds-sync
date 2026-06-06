@@ -267,18 +267,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false);
     }
-
-    // IPTV credentials are no longer broadcast via realtime (sensitive data).
-    // We poll the secure edge function instead. Polling skips when in the player.
-    const interval = setInterval(() => {
-      if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
-        fetchCredentials();
-      }
-    }, 60000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
@@ -325,6 +313,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ageVerification,
       ageVerificationLoading,
       refreshVerification: fetchVerification,
+      refreshCredentials: fetchCredentials,
     }}>
       {children}
     </AppContext.Provider>
