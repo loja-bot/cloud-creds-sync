@@ -53,6 +53,7 @@ interface AppContextType {
   ageVerification: AgeVerification | null;
   ageVerificationLoading: boolean;
   refreshVerification: () => void;
+  refreshCredentials: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -100,6 +101,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!authUser) return;
 
     const fetchProfile = async () => {
+      if (currentSectionRef.current === "player") return;
+
       const { data } = await supabase
         .from("app_users")
         .select("*")
@@ -128,9 +131,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProfile();
-
-    const interval = setInterval(fetchProfile, 30000);
-    return () => clearInterval(interval);
   }, [authUser]);
 
   const fetchVerification = useCallback(async () => {
@@ -208,6 +208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!data) {
         setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
+        currentSectionRef.current = "maintenance";
         setSection((s) => (s === "maintenance" ? s : "maintenance"));
         setExpiresAt((prev) => (prev === null ? prev : null));
         return;
@@ -216,6 +217,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         setCredentials((prev) => (prev === null ? prev : null));
         wasInMaintenanceRef.current = true;
+        currentSectionRef.current = "maintenance";
         setSection((s) => (s === "maintenance" ? s : "maintenance"));
         setExpiresAt((prev) => (prev === data.expires_at ? prev : data.expires_at));
         return;
@@ -241,12 +243,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           description: "Nova playlist detectada. Aproveite!",
           duration: 5000,
         });
+        currentSectionRef.current = "home";
         setSection((s) => (s === "maintenance" ? "home" : s));
       }
     } catch (e) {
       console.error("Failed to fetch credentials:", e);
       if ((currentSectionRef.current as Section) !== "player") {
         setCredentials(null);
+        currentSectionRef.current = "maintenance";
         setSection("maintenance");
       }
     } finally {
@@ -260,34 +264,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false);
     }
-
-    // IPTV credentials are no longer broadcast via realtime (sensitive data).
-    // We poll the secure edge function instead. Polling skips when in the player.
-    const interval = setInterval(() => {
-      if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
-        fetchCredentials();
-      }
-    }, 60000);
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [fetchCredentials, authUser, appUser]);
 
   const navigate = useCallback((s: Section) => {
     setPreviousSection(currentSectionRef.current);
+    currentSectionRef.current = s;
     setSection(s);
   }, []);
 
   const openPlayer = useCallback((state: PlayerState) => {
     setPreviousSection(currentSectionRef.current);
     setPlayerState(state);
+    currentSectionRef.current = "player";
     setSection("player");
   }, []);
 
   const closePlayer = useCallback(() => {
     setPlayerState(null);
-    setSection((prev) => (prev === "player" ? (previousSection === "player" ? "home" : previousSection) : prev));
+    setSection((prev) => {
+      const next = prev === "player" ? (previousSection === "player" ? "home" : previousSection) : prev;
+      currentSectionRef.current = next;
+      return next;
+    });
   }, [previousSection]);
 
   const signOut = useCallback(async () => {
@@ -295,6 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthUser(null);
     setAppUser(null);
     setCredentials(null);
+    currentSectionRef.current = "home";
     setSection("home");
   }, []);
 
@@ -318,6 +317,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ageVerification,
       ageVerificationLoading,
       refreshVerification: fetchVerification,
+      refreshCredentials: fetchCredentials,
     }}>
       {children}
     </AppContext.Provider>

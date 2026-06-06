@@ -85,6 +85,9 @@ const AppContent = () => {
     return <AgeVerificationScreen />;
   }
 
+  // Keep playback mounted above maintenance/loading changes so background updates never freeze or close it.
+  if (section === "player") return <VideoPlayer />;
+
   // Admin-forced maintenance mode
   if (maintenanceMode) {
     return <MaintenanceScreen message={maintenanceMessage} />;
@@ -104,7 +107,6 @@ const AppContent = () => {
 
   // No IPTV credentials (playlist maintenance)
   if (section === "maintenance") return <MaintenanceScreen />;
-  if (section === "player") return <VideoPlayer />;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

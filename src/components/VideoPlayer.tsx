@@ -28,12 +28,95 @@ const VideoPlayer: React.FC = () => {
   const resumeTimeRef = useRef<number>(0);
   const hasResumedRef = useRef(false);
   const isLiveRef = useRef(false);
+  const playbackUrlRef = useRef("");
+  const directUrlRef = useRef("");
+  const activeStreamModeRef = useRef<"direct" | "proxy">("direct");
+  const recoveringRef = useRef(false);
+  const recoverPlaybackRef = useRef<() => void>(() => {});
+  const stallTimer = useRef<ReturnType<typeof setInterval>>();
+  const lastProgressAtRef = useRef(Date.now());
 
   const hideControlsLater = useCallback(() => {
     if (controlsTimer.current) clearTimeout(controlsTimer.current);
     setShowControls(true);
     controlsTimer.current = setTimeout(() => setShowControls(false), 4000);
   }, []);
+
+  const destroyMpegtsPlayer = useCallback(() => {
+    if (!playerRef.current) return;
+    try {
+      playerRef.current.pause();
+      playerRef.current.unload();
+      playerRef.current.detachMediaElement();
+      playerRef.current.destroy();
+    } catch {}
+    playerRef.current = null;
+  }, []);
+
+  const createLivePlayer = useCallback((url: string, mode: "direct" | "proxy" = "direct") => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    destroyMpegtsPlayer();
+    activeStreamModeRef.current = mode;
+    const player = mpegts.createPlayer({
+      type: "mpegts",
+      isLive: true,
+      url,
+    }, {
+      enableWorker: true,
+      lazyLoad: false,
+      lazyLoadMaxDuration: 5 * 60,
+      seekType: "range",
+      autoCleanupSourceBuffer: true,
+    });
+
+    player.on(mpegts.Events.ERROR, () => {
+      window.setTimeout(() => recoverPlaybackRef.current(), 0);
+    });
+    player.attachMediaElement(video);
+    player.load();
+    player.play();
+    playerRef.current = player;
+  }, [destroyMpegtsPlayer]);
+
+  const recoverPlayback = useCallback(() => {
+    const video = videoRef.current;
+    const shouldFallbackToProxy = activeStreamModeRef.current === "direct" && Boolean(playbackUrlRef.current);
+    const baseUrl = shouldFallbackToProxy ? playbackUrlRef.current : activeStreamModeRef.current === "direct" ? directUrlRef.current : playbackUrlRef.current;
+    if (!video || !baseUrl || recoveringRef.current) return;
+
+    recoveringRef.current = true;
+    const resumeAt = video.currentTime;
+    const reconnectUrl = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}reconnect=${Date.now()}`;
+
+    try {
+      if (isLiveRef.current && mpegts.isSupported()) {
+        createLivePlayer(reconnectUrl, shouldFallbackToProxy ? "proxy" : activeStreamModeRef.current);
+      } else {
+        activeStreamModeRef.current = shouldFallbackToProxy ? "proxy" : activeStreamModeRef.current;
+        video.src = reconnectUrl;
+        video.load();
+        const onReady = () => {
+          if (!isLiveRef.current && resumeAt > 0) {
+            try { video.currentTime = resumeAt; } catch {}
+          }
+          video.play().catch(() => {});
+          video.removeEventListener("loadedmetadata", onReady);
+        };
+        video.addEventListener("loadedmetadata", onReady);
+      }
+      lastProgressAtRef.current = Date.now();
+    } catch {} finally {
+      window.setTimeout(() => {
+        recoveringRef.current = false;
+      }, 2500);
+    }
+  }, [createLivePlayer]);
+
+  useEffect(() => {
+    recoverPlaybackRef.current = recoverPlayback;
+  }, [recoverPlayback]);
 
   // Determine saved progress for this stream
   useEffect(() => {
@@ -60,36 +143,19 @@ const VideoPlayer: React.FC = () => {
     const proxiedUrl = `${proxyBase}?streamUrl=${encodeURIComponent(url)}`;
     const video = videoRef.current;
     const isLive = playerState.type === "live";
+    directUrlRef.current = url;
+    playbackUrlRef.current = proxiedUrl;
+    activeStreamModeRef.current = "direct";
 
     // Cleanup previous player
-    if (playerRef.current) {
-      try {
-        playerRef.current.pause();
-        playerRef.current.unload();
-        playerRef.current.detachMediaElement();
-        playerRef.current.destroy();
-      } catch {}
-      playerRef.current = null;
-    }
+    destroyMpegtsPlayer();
+    if (stallTimer.current) clearInterval(stallTimer.current);
 
     if (isLive && mpegts.isSupported()) {
-      // Only use mpegts.js for LIVE streams (no seeking needed)
-      const player = mpegts.createPlayer({
-        type: "mpegts",
-        isLive: true,
-        url: proxiedUrl,
-      }, {
-        enableWorker: true,
-        lazyLoadMaxDuration: 5 * 60,
-        seekType: "range",
-      });
-      player.attachMediaElement(video);
-      player.load();
-      player.play();
-      playerRef.current = player;
+      createLivePlayer(url, "direct");
     } else {
-      // For VOD (movies/series) use native <video> - supports Range seeking
-      video.src = proxiedUrl;
+      // For VOD (movies/series) use native <video> - direct stream avoids edge-function timeouts.
+      video.src = url;
       video.load();
       video.play().catch(() => {});
     }
@@ -97,7 +163,17 @@ const VideoPlayer: React.FC = () => {
     setPlaying(true);
     setCurrentTime(0);
     setDuration(0);
+    lastProgressAtRef.current = Date.now();
     hideControlsLater();
+
+    // If the streaming proxy recycles the connection, reconnect automatically instead of freezing.
+    stallTimer.current = setInterval(() => {
+      const currentVideo = videoRef.current;
+      if (!currentVideo || currentVideo.paused || document.hidden) return;
+      if (Date.now() - lastProgressAtRef.current > 12000) {
+        recoverPlaybackRef.current();
+      }
+    }, 5000);
 
     // Save progress every 5 seconds
     saveTimer.current = setInterval(() => {
@@ -136,20 +212,13 @@ const VideoPlayer: React.FC = () => {
         });
       }
       if (saveTimer.current) clearInterval(saveTimer.current);
-      if (playerRef.current) {
-        try {
-          playerRef.current.pause();
-          playerRef.current.unload();
-          playerRef.current.detachMediaElement();
-          playerRef.current.destroy();
-        } catch {}
-        playerRef.current = null;
-      }
+      if (stallTimer.current) clearInterval(stallTimer.current);
+      destroyMpegtsPlayer();
       // Clear native src too
       video.removeAttribute("src");
       video.load();
     };
-  }, [playerState]);  // intentionally not including hideControlsLater
+  }, [playerState, createLivePlayer, destroyMpegtsPlayer]);  // intentionally not including hideControlsLater
 
   // Resume from saved position
   const onLoadedMetadata = useCallback(() => {
@@ -238,6 +307,7 @@ const VideoPlayer: React.FC = () => {
   const onTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || isSeeking) return;
+    lastProgressAtRef.current = Date.now();
     setCurrentTime(video.currentTime);
     if (video.duration && isFinite(video.duration)) setDuration(video.duration);
   };
@@ -395,44 +465,18 @@ const VideoPlayer: React.FC = () => {
             closePlayer();
             return;
           }
-          // Attempt silent recovery — reload current source and resume
-          try {
-            const resumeAt = video.currentTime;
-            if (playerRef.current) {
-              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
-            } else {
-              video.load();
-              const onReady = () => {
-                if (!isLive && resumeAt > 0) {
-                  try { video.currentTime = resumeAt; } catch {}
-                }
-                video.play().catch(() => {});
-                video.removeEventListener("loadedmetadata", onReady);
-              };
-              video.addEventListener("loadedmetadata", onReady);
-            }
-          } catch {}
+          recoverPlaybackRef.current();
         }}
         onError={() => {
           // Swallow transient media errors — never auto-close the player.
-          const video = videoRef.current;
-          if (!video || !playerState) return;
-          const resumeAt = video.currentTime;
-          try {
-            if (playerRef.current) {
-              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
-            } else {
-              video.load();
-              const onReady = () => {
-                if (playerState.type !== "live" && resumeAt > 0) {
-                  try { video.currentTime = resumeAt; } catch {}
-                }
-                video.play().catch(() => {});
-                video.removeEventListener("loadedmetadata", onReady);
-              };
-              video.addEventListener("loadedmetadata", onReady);
-            }
-          } catch {}
+          recoverPlaybackRef.current();
+        }}
+        onProgress={() => {
+          lastProgressAtRef.current = Date.now();
+        }}
+        onPlaying={() => {
+          lastProgressAtRef.current = Date.now();
+          setPlaying(true);
         }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}

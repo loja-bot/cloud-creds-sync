@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Tv, Wrench, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useApp } from "@/contexts/AppContext";
 
 interface MaintenanceScreenProps {
   message?: string;
@@ -14,6 +15,7 @@ const COOLDOWN_MS = 45_000;
 const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({ message }) => {
   const [loading, setLoading] = useState(false);
   const autoTriedRef = useRef(false);
+  const { refreshCredentials } = useApp();
 
   const fetchNewPlaylist = async (manual = false) => {
     if (loading) return;
@@ -32,6 +34,7 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({ message }) => {
       if (error) throw error;
       if (data?.ok) {
         toast.success("Nova playlist obtida!", { description: "Atualizando em instantes..." });
+        await refreshCredentials();
       } else if (data?.throttled) {
         if (manual) toast.info("Aguarde um momento e tente novamente.");
       } else {
@@ -49,8 +52,6 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({ message }) => {
     if (autoTriedRef.current) return;
     autoTriedRef.current = true;
     fetchNewPlaylist(false);
-    const id = setInterval(() => fetchNewPlaylist(false), 60_000);
-    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
