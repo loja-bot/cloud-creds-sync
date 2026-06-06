@@ -29,6 +29,8 @@ const VideoPlayer: React.FC = () => {
   const hasResumedRef = useRef(false);
   const isLiveRef = useRef(false);
   const playbackUrlRef = useRef("");
+  const directUrlRef = useRef("");
+  const activeStreamModeRef = useRef<"direct" | "proxy">("direct");
   const recoveringRef = useRef(false);
   const recoverPlaybackRef = useRef<() => void>(() => {});
   const stallTimer = useRef<ReturnType<typeof setInterval>>();
@@ -51,11 +53,12 @@ const VideoPlayer: React.FC = () => {
     playerRef.current = null;
   }, []);
 
-  const createLivePlayer = useCallback((url: string) => {
+  const createLivePlayer = useCallback((url: string, mode: "direct" | "proxy" = "direct") => {
     const video = videoRef.current;
     if (!video) return;
 
     destroyMpegtsPlayer();
+    activeStreamModeRef.current = mode;
     const player = mpegts.createPlayer({
       type: "mpegts",
       isLive: true,
@@ -79,7 +82,8 @@ const VideoPlayer: React.FC = () => {
 
   const recoverPlayback = useCallback(() => {
     const video = videoRef.current;
-    const baseUrl = playbackUrlRef.current;
+    const shouldFallbackToProxy = activeStreamModeRef.current === "direct" && Boolean(playbackUrlRef.current);
+    const baseUrl = shouldFallbackToProxy ? playbackUrlRef.current : activeStreamModeRef.current === "direct" ? directUrlRef.current : playbackUrlRef.current;
     if (!video || !baseUrl || recoveringRef.current) return;
 
     recoveringRef.current = true;
@@ -88,8 +92,9 @@ const VideoPlayer: React.FC = () => {
 
     try {
       if (isLiveRef.current && mpegts.isSupported()) {
-        createLivePlayer(reconnectUrl);
+        createLivePlayer(reconnectUrl, shouldFallbackToProxy ? "proxy" : activeStreamModeRef.current);
       } else {
+        activeStreamModeRef.current = shouldFallbackToProxy ? "proxy" : activeStreamModeRef.current;
         video.src = reconnectUrl;
         video.load();
         const onReady = () => {
