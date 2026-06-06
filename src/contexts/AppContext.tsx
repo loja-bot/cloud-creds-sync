@@ -261,20 +261,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
 
-    const channel = supabase
-      .channel("iptv-credentials-changes")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "iptv_credentials",
-      }, () => {
-        // Don't disturb playback
-        if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
-          fetchCredentials();
-        }
-      })
-      .subscribe();
-
+    // IPTV credentials are no longer broadcast via realtime (sensitive data).
+    // We poll the secure edge function instead. Polling skips when in the player.
     const interval = setInterval(() => {
       if (authUser && appUser && !appUser.is_banned && currentSectionRef.current !== "player") {
         fetchCredentials();
@@ -283,7 +271,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel);
     };
   }, [fetchCredentials, authUser, appUser]);
 
