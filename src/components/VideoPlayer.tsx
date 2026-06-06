@@ -378,7 +378,62 @@ const VideoPlayer: React.FC = () => {
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onCanPlay={onCanPlay}
-        onEnded={closePlayer}
+        onEnded={() => {
+          // Do NOT close player on 'ended'. Streams via proxy can fire 'ended'
+          // when the upstream connection is recycled (edge function time limits,
+          // live buffer underrun, etc). Only close if VOD actually reached the
+          // real end. Otherwise, try to resume playback.
+          const video = videoRef.current;
+          if (!video || !playerState) return;
+          const isLive = playerState.type === "live";
+          const reachedEnd =
+            !isLive &&
+            isFinite(video.duration) &&
+            video.duration > 0 &&
+            video.currentTime >= video.duration - 1.5;
+          if (reachedEnd) {
+            closePlayer();
+            return;
+          }
+          // Attempt silent recovery — reload current source and resume
+          try {
+            const resumeAt = video.currentTime;
+            if (playerRef.current) {
+              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
+            } else {
+              video.load();
+              const onReady = () => {
+                if (!isLive && resumeAt > 0) {
+                  try { video.currentTime = resumeAt; } catch {}
+                }
+                video.play().catch(() => {});
+                video.removeEventListener("loadedmetadata", onReady);
+              };
+              video.addEventListener("loadedmetadata", onReady);
+            }
+          } catch {}
+        }}
+        onError={() => {
+          // Swallow transient media errors — never auto-close the player.
+          const video = videoRef.current;
+          if (!video || !playerState) return;
+          const resumeAt = video.currentTime;
+          try {
+            if (playerRef.current) {
+              try { playerRef.current.unload(); playerRef.current.load(); playerRef.current.play(); } catch {}
+            } else {
+              video.load();
+              const onReady = () => {
+                if (playerState.type !== "live" && resumeAt > 0) {
+                  try { video.currentTime = resumeAt; } catch {}
+                }
+                video.play().catch(() => {});
+                video.removeEventListener("loadedmetadata", onReady);
+              };
+              video.addEventListener("loadedmetadata", onReady);
+            }
+          } catch {}
+        }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         playsInline
