@@ -124,6 +124,7 @@ export type Database = {
           id: string
           name: string
           rating: number
+          user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -132,6 +133,7 @@ export type Database = {
           id?: string
           name: string
           rating: number
+          user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           id?: string
           name?: string
           rating?: number
+          user_id?: string | null
         }
         Relationships: []
       }
