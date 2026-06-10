@@ -755,6 +755,36 @@ const AdminPanel: React.FC = () => {
         </div>
       </Modal>
 
+      <Modal open={showGuestModal} onClose={() => setShowGuestModal(false)}>
+        <h3 className="font-display text-sm font-bold text-yellow-500 tracking-wider">GERAR TOKEN DE VISITANTE</h3>
+        <p className="text-muted-foreground text-xs">Token de uso único. Sessão expira em 24h. Sem compartilhar, sem conteúdo adulto.</p>
+        {!guestTokenInfo ? (
+          <>
+            <input type="text" placeholder="Nome do visitante (opcional)" value={guestUsername} onChange={(e) => setGuestUsername(e.target.value.slice(0, 60))}
+              className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-yellow-500/50" />
+            <div className="flex gap-2">
+              <button onClick={() => setShowGuestModal(false)} className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancelar</button>
+              <button onClick={handleGenerateGuestToken} disabled={actionLoading === "guest"} className="flex-1 px-3 py-2 rounded-lg bg-yellow-500 text-background text-sm font-bold disabled:opacity-50">
+                {actionLoading === "guest" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Gerar"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-secondary border border-yellow-500/30 rounded-lg p-3 space-y-1">
+              <p className="text-[10px] text-muted-foreground">Visitante: <span className="text-foreground">{guestTokenInfo.username}</span></p>
+              <p className="text-[10px] text-muted-foreground">Token (copie e envie):</p>
+              <p className="text-yellow-500 text-xs break-all font-mono cursor-pointer"
+                 onClick={() => { navigator.clipboard.writeText(guestTokenInfo.token); showToast("Token copiado!"); }}>
+                {guestTokenInfo.token}
+              </p>
+            </div>
+            <button onClick={() => setShowGuestModal(false)} className="w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold">Fechar</button>
+          </>
+        )}
+      </Modal>
+
+
       {/* Toast */}
       <AnimatePresence>
         {toastMsg && (
