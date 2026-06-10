@@ -7,8 +7,11 @@ import ContentCard from "./ContentCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clapperboard, Loader2, Play, X, Star, Search, AlertTriangle } from "lucide-react";
 
+import { filterAdultCategories } from "@/lib/guestFilter";
+
 const SeriesSection: React.FC = () => {
-  const { credentials, openPlayer } = useApp();
+  const { credentials, openPlayer, appUser } = useApp();
+  const isGuest = !!appUser?.is_guest;
   const { isContentBlocked, isCategoryBlocked, getCategoryAction } = useBlockedContent();
   const [categories, setCategories] = useState<Category[]>([]);
   const [seriesList, setSeriesList] = useState<SeriesInfo[]>([]);
@@ -23,10 +26,11 @@ const SeriesSection: React.FC = () => {
   useEffect(() => {
     if (!credentials) return;
     getSeriesCategories(credentials).then((cats) => {
-      setCategories(cats || []);
-      if (cats?.length) setSelectedCat(cats[0].category_id);
+      const filtered = filterAdultCategories(cats || [], isGuest);
+      setCategories(filtered);
+      if (filtered.length) setSelectedCat(filtered[0].category_id);
     }).catch(console.error);
-  }, [credentials]);
+  }, [credentials, isGuest]);
 
   useEffect(() => {
     if (!credentials || !selectedCat) return;

@@ -269,6 +269,26 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // --- GENERATE GUEST TOKEN ---
+    if (action === "generate_guest_token") {
+      const body = await req.json().catch(() => ({}));
+      const username = typeof body.username === "string" && body.username.trim()
+        ? body.username.trim().slice(0, 60)
+        : `guest_${Math.random().toString(36).slice(2, 8)}`;
+      const hours = Number(body.hours) > 0 && Number(body.hours) <= 168 ? Number(body.hours) : 24;
+      const token = crypto.randomUUID().replace(/-/g, "");
+      const sessionExpires = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase.from("guest_tokens").insert({
+        token,
+        username,
+        created_by: adminUser.id,
+        session_expires_at: sessionExpires,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      }).select().single();
+      if (error) throw error;
+      return new Response(JSON.stringify({ token: data.token, username, session_expires_at: sessionExpires }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -5,7 +5,7 @@ import {
   Users, ShieldX, ShieldCheck, Clock, Trash2, Wrench,
   Globe, ArrowLeft, Loader2, Tv, RefreshCw, X, Check,
   Film, Clapperboard, Radio, Search, Ban, AlertTriangle,
-  FolderOpen, ChevronRight, Eye, EyeOff, MessageSquare, Link2
+  FolderOpen, ChevronRight, Eye, EyeOff, MessageSquare, Link2, UserPlus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -108,6 +108,9 @@ const AdminPanel: React.FC = () => {
   const [blockedContent, setBlockedContent] = useState<any[]>([]);
   const [blockedCategories, setBlockedCategories] = useState<any[]>([]);
   const [installLink, setInstallLink] = useState<string | null>(null);
+  const [guestTokenInfo, setGuestTokenInfo] = useState<{ token: string; username: string } | null>(null);
+  const [guestUsername, setGuestUsername] = useState("");
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -339,6 +342,21 @@ const AdminPanel: React.FC = () => {
     setActionLoading("");
   };
 
+  const handleGenerateGuestToken = async () => {
+    setActionLoading("guest");
+    try {
+      const res = await adminApi("generate_guest_token", { username: guestUsername || undefined, hours: 24 });
+      if (res.token) {
+        setGuestTokenInfo({ token: res.token, username: res.username || guestUsername || "guest" });
+        await navigator.clipboard.writeText(res.token);
+        showToast("Token copiado! Válido por 24h");
+      } else {
+        showToast(res.error || "Erro ao gerar token");
+      }
+    } catch { showToast("Erro ao gerar token"); }
+    setActionLoading("");
+  };
+
   const formatDate = (d: string | null) => {
     if (!d) return "—";
     try { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
@@ -437,7 +455,7 @@ const AdminPanel: React.FC = () => {
                   <QuickBtn icon={Wrench} label={maintenanceEnabled ? "DESATIVAR" : "MANUTENÇÃO"} color={maintenanceEnabled ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-card border-accent/30 text-accent"} onClick={() => setShowMaintenanceModal(true)} />
                   <QuickBtn icon={Globe} label="HOST" color="bg-card border-blue-500/30 text-blue-400" onClick={() => setShowHostModal(true)} />
                   <QuickBtn icon={Link2} label="INSTALL LINK" color="bg-card border-primary/30 text-primary" onClick={handleGenerateInstallLink} disabled={actionLoading === "install"} />
-                  <QuickBtn icon={RefreshCw} label="ATUALIZAR" color="bg-card border-muted-foreground/30 text-muted-foreground" onClick={() => { fetchUsers(); fetchSettings(); }} disabled={loading} />
+                  <QuickBtn icon={UserPlus} label="GUEST TOKEN" color="bg-card border-yellow-500/30 text-yellow-500" onClick={() => { setGuestUsername(""); setGuestTokenInfo(null); setShowGuestModal(true); }} />
                 </div>
                 {installLink && (
                   <div className="bg-card border border-primary/20 rounded-xl p-3 mt-2">
@@ -736,6 +754,36 @@ const AdminPanel: React.FC = () => {
             className="flex-1 px-3 py-2 rounded-lg bg-yellow-500 text-background text-sm font-bold">Salvar</button>
         </div>
       </Modal>
+
+      <Modal open={showGuestModal} onClose={() => setShowGuestModal(false)}>
+        <h3 className="font-display text-sm font-bold text-yellow-500 tracking-wider">GERAR TOKEN DE VISITANTE</h3>
+        <p className="text-muted-foreground text-xs">Token de uso único. Sessão expira em 24h. Sem compartilhar, sem conteúdo adulto.</p>
+        {!guestTokenInfo ? (
+          <>
+            <input type="text" placeholder="Nome do visitante (opcional)" value={guestUsername} onChange={(e) => setGuestUsername(e.target.value.slice(0, 60))}
+              className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-yellow-500/50" />
+            <div className="flex gap-2">
+              <button onClick={() => setShowGuestModal(false)} className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancelar</button>
+              <button onClick={handleGenerateGuestToken} disabled={actionLoading === "guest"} className="flex-1 px-3 py-2 rounded-lg bg-yellow-500 text-background text-sm font-bold disabled:opacity-50">
+                {actionLoading === "guest" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Gerar"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-secondary border border-yellow-500/30 rounded-lg p-3 space-y-1">
+              <p className="text-[10px] text-muted-foreground">Visitante: <span className="text-foreground">{guestTokenInfo.username}</span></p>
+              <p className="text-[10px] text-muted-foreground">Token (copie e envie):</p>
+              <p className="text-yellow-500 text-xs break-all font-mono cursor-pointer"
+                 onClick={() => { navigator.clipboard.writeText(guestTokenInfo.token); showToast("Token copiado!"); }}>
+                {guestTokenInfo.token}
+              </p>
+            </div>
+            <button onClick={() => setShowGuestModal(false)} className="w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold">Fechar</button>
+          </>
+        )}
+      </Modal>
+
 
       {/* Toast */}
       <AnimatePresence>

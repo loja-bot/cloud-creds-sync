@@ -32,6 +32,7 @@ interface AppUser {
   is_permanent: boolean;
   is_banned: boolean;
   ban_reason: string | null;
+  is_guest: boolean;
 }
 
 interface AppContextType {
@@ -120,11 +121,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             prev.account_expires_at === data.account_expires_at &&
             prev.is_permanent === data.is_permanent &&
             prev.is_banned === data.is_banned &&
-            prev.ban_reason === data.ban_reason
+            prev.ban_reason === data.ban_reason &&
+            prev.is_guest === !!data.is_guest
           ) {
             return prev;
           }
-          return data as AppUser;
+          return { ...(data as Omit<AppUser, 'is_guest'>), is_guest: !!data.is_guest } as AppUser;
         });
       }
       setAuthLoading(false);
@@ -156,6 +158,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchVerification();
   }, [fetchVerification]);
+
+  // Guest auto-logout when session expires
+  useEffect(() => {
+    if (!appUser?.is_guest || !appUser.account_expires_at) return;
+    const checkExpiry = () => {
+      if (appUser.account_expires_at && new Date(appUser.account_expires_at) < new Date()) {
+        toast.error("Sessão de visitante expirada.");
+        supabase.auth.signOut().then(() => {
+          setAuthUser(null); setAppUser(null); setCredentials(null);
+          currentSectionRef.current = "home"; setSection("home");
+        });
+      }
+    };
+    checkExpiry();
+    const id = setInterval(checkExpiry, 60_000);
+    return () => clearInterval(id);
+  }, [appUser?.is_guest, appUser?.account_expires_at]);
 
 
   useEffect(() => {

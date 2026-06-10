@@ -7,8 +7,11 @@ import { useBlockedContent } from "@/hooks/useBlockedContent";
 import ContentCard from "./ContentCard";
 import { Radio, Loader2, AlertTriangle } from "lucide-react";
 
+import { filterAdultCategories } from "@/lib/guestFilter";
+
 const LiveSection: React.FC = () => {
-  const { credentials, openPlayer } = useApp();
+  const { credentials, openPlayer, appUser } = useApp();
+  const isGuest = !!appUser?.is_guest;
   const { isContentBlocked, isCategoryBlocked, getCategoryAction } = useBlockedContent();
   const [categories, setCategories] = useState<Category[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
@@ -19,10 +22,11 @@ const LiveSection: React.FC = () => {
   useEffect(() => {
     if (!credentials) return;
     getLiveCategories(credentials).then((cats) => {
-      setCategories(cats || []);
-      if (cats?.length) setSelectedCat(cats[0].category_id);
+      const filtered = filterAdultCategories(cats || [], isGuest);
+      setCategories(filtered);
+      if (filtered.length) setSelectedCat(filtered[0].category_id);
     }).catch(console.error);
-  }, [credentials]);
+  }, [credentials, isGuest]);
 
   useEffect(() => {
     if (!credentials || !selectedCat) return;
