@@ -455,7 +455,7 @@ const AdminPanel: React.FC = () => {
                   <QuickBtn icon={Wrench} label={maintenanceEnabled ? "DESATIVAR" : "MANUTENÇÃO"} color={maintenanceEnabled ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-card border-accent/30 text-accent"} onClick={() => setShowMaintenanceModal(true)} />
                   <QuickBtn icon={Globe} label="HOST" color="bg-card border-blue-500/30 text-blue-400" onClick={() => setShowHostModal(true)} />
                   <QuickBtn icon={Link2} label="INSTALL LINK" color="bg-card border-primary/30 text-primary" onClick={handleGenerateInstallLink} disabled={actionLoading === "install"} />
-                  <QuickBtn icon={RefreshCw} label="ATUALIZAR" color="bg-card border-muted-foreground/30 text-muted-foreground" onClick={() => { fetchUsers(); fetchSettings(); }} disabled={loading} />
+                  <QuickBtn icon={UserPlus} label="GUEST TOKEN" color="bg-card border-yellow-500/30 text-yellow-500" onClick={() => { setGuestUsername(""); setGuestTokenInfo(null); setShowGuestModal(true); }} />
                 </div>
                 {installLink && (
                   <div className="bg-card border border-primary/20 rounded-xl p-3 mt-2">
