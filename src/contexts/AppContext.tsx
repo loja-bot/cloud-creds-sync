@@ -159,6 +159,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     fetchVerification();
   }, [fetchVerification]);
 
+  // Guest auto-logout when session expires
+  useEffect(() => {
+    if (!appUser?.is_guest || !appUser.account_expires_at) return;
+    const checkExpiry = () => {
+      if (appUser.account_expires_at && new Date(appUser.account_expires_at) < new Date()) {
+        toast.error("Sessão de visitante expirada.");
+        supabase.auth.signOut().then(() => {
+          setAuthUser(null); setAppUser(null); setCredentials(null);
+          currentSectionRef.current = "home"; setSection("home");
+        });
+      }
+    };
+    checkExpiry();
+    const id = setInterval(checkExpiry, 60_000);
+    return () => clearInterval(id);
+  }, [appUser?.is_guest, appUser?.account_expires_at]);
+
 
   useEffect(() => {
     const fetchSettings = async () => {
