@@ -73,6 +73,7 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
+  const [guestToken, setGuestToken] = useState("");
 
   useEffect(() => {
     fetch(FN_URL("auth-config"))
