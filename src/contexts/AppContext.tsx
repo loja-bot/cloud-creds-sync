@@ -32,6 +32,7 @@ interface AppUser {
   is_permanent: boolean;
   is_banned: boolean;
   ban_reason: string | null;
+  is_guest: boolean;
 }
 
 interface AppContextType {
