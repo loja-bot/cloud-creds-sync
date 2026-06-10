@@ -121,11 +121,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             prev.account_expires_at === data.account_expires_at &&
             prev.is_permanent === data.is_permanent &&
             prev.is_banned === data.is_banned &&
-            prev.ban_reason === data.ban_reason
+            prev.ban_reason === data.ban_reason &&
+            prev.is_guest === !!data.is_guest
           ) {
             return prev;
           }
-          return data as AppUser;
+          return { ...(data as Omit<AppUser, 'is_guest'>), is_guest: !!data.is_guest } as AppUser;
         });
       }
       setAuthLoading(false);
