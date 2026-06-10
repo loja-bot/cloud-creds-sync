@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-type Mode = "login" | "signup" | "verify";
+type Mode = "login" | "signup" | "verify" | "guest";
 
 const FN_URL = (name: string) =>
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
