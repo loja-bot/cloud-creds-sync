@@ -8,9 +8,11 @@ import VideoBackground from "./VideoBackground";
 import { motion, AnimatePresence } from "framer-motion";
 import { Film, Loader2, Play, X, Star, Search, AlertTriangle } from "lucide-react";
 import moviesBg from "../../public/videos/movies-bg.mp4.asset.json";
+import { filterAdultCategories, isAdultCategoryName } from "@/lib/guestFilter";
 
 const MoviesSection: React.FC = () => {
-  const { credentials, openPlayer } = useApp();
+  const { credentials, openPlayer, appUser } = useApp();
+  const isGuest = !!appUser?.is_guest;
   const { isContentBlocked, isCategoryBlocked, getCategoryAction } = useBlockedContent();
   const [categories, setCategories] = useState<Category[]>([]);
   const [streams, setStreams] = useState<VodStream[]>([]);
