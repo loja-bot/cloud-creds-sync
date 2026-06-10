@@ -99,6 +99,20 @@ const LoginScreen: React.FC = () => {
     finally { setLoading(false); }
   };
 
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null); setSuccess(null);
+    if (!guestToken.trim()) { setError("Digite o token de visitante."); return; }
+    setLoading(true);
+    try {
+      const { status, data } = await callFn("guest-login", { token: guestToken.trim() });
+      if (status !== 200) { setError(data.error || "Token inválido."); return; }
+      await supabase.auth.setSession(data.session);
+      setSuccess("Entrando como visitante...");
+    } catch { setError("Erro de conexão. Tente novamente."); }
+    finally { setLoading(false); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null); setSuccess(null);
