@@ -26,10 +26,11 @@ const MoviesSection: React.FC = () => {
   useEffect(() => {
     if (!credentials) return;
     getVodCategories(credentials).then((cats) => {
-      setCategories(cats || []);
-      if (cats?.length) setSelectedCat(cats[0].category_id);
+      const filtered = filterAdultCategories(cats || [], isGuest);
+      setCategories(filtered);
+      if (filtered.length) setSelectedCat(filtered[0].category_id);
     }).catch(console.error);
-  }, [credentials]);
+  }, [credentials, isGuest]);
 
   useEffect(() => {
     if (!credentials || !selectedCat) return;
