@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const VideoPlayer: React.FC = () => {
-  const { playerState, closePlayer } = useApp();
+  const { playerState, closePlayer, appUser } = useApp();
+  const isGuest = !!appUser?.is_guest;
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<mpegts.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
