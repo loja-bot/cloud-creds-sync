@@ -108,6 +108,9 @@ const AdminPanel: React.FC = () => {
   const [blockedContent, setBlockedContent] = useState<any[]>([]);
   const [blockedCategories, setBlockedCategories] = useState<any[]>([]);
   const [installLink, setInstallLink] = useState<string | null>(null);
+  const [guestTokenInfo, setGuestTokenInfo] = useState<{ token: string; username: string } | null>(null);
+  const [guestUsername, setGuestUsername] = useState("");
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
