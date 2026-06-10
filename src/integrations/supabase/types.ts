@@ -84,6 +84,7 @@ export type Database = {
           email: string
           id: string
           is_banned: boolean
+          is_guest: boolean
           is_permanent: boolean
           last_login: string | null
           user_id: string
@@ -97,6 +98,7 @@ export type Database = {
           email: string
           id?: string
           is_banned?: boolean
+          is_guest?: boolean
           is_permanent?: boolean
           last_login?: string | null
           user_id: string
@@ -110,9 +112,46 @@ export type Database = {
           email?: string
           id?: string
           is_banned?: boolean
+          is_guest?: boolean
           is_permanent?: boolean
           last_login?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      guest_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          session_expires_at: string | null
+          token: string
+          used_at: string | null
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          session_expires_at?: string | null
+          token: string
+          used_at?: string | null
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          session_expires_at?: string | null
+          token?: string
+          used_at?: string | null
+          user_id?: string | null
+          username?: string
         }
         Relationships: []
       }
