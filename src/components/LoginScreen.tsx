@@ -159,7 +159,18 @@ const LoginScreen: React.FC = () => {
             </div>
           </div>
 
-          {mode !== "verify" && (
+          {/* Small guest button above */}
+          {mode !== "verify" && mode !== "guest" && (
+            <button
+              type="button"
+              onClick={() => { setMode("guest"); setError(null); setSuccess(null); }}
+              className="text-[11px] text-muted-foreground hover:text-primary underline-offset-2 hover:underline transition"
+            >
+              Entrar sem conta (token de visitante)
+            </button>
+          )}
+
+          {mode !== "verify" && mode !== "guest" && (
             <div className="flex bg-card rounded-xl p-1 border border-border">
               <button
                 onClick={() => { setMode("login"); setError(null); setSuccess(null); }}
@@ -172,6 +183,35 @@ const LoginScreen: React.FC = () => {
             </div>
           )}
 
+          {mode === "guest" ? (
+            <form onSubmit={handleGuestLogin} className="space-y-3 text-left">
+              <button type="button" onClick={() => { setMode("login"); setGuestToken(""); setError(null); }} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                <ArrowLeft className="w-3 h-3" /> Voltar
+              </button>
+              <p className="text-xs text-muted-foreground text-center">
+                Solicite um token ao administrador. Acesso válido por 24h.
+              </p>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text" required value={guestToken}
+                  onChange={(e) => setGuestToken(e.target.value.trim())}
+                  placeholder="Cole o token aqui"
+                  className={`${inputCls} pl-10 font-mono text-xs`}
+                  autoComplete="off"
+                />
+              </div>
+              {error && <p className="text-destructive text-xs text-center">{error}</p>}
+              {success && <p className="text-primary text-xs text-center">{success}</p>}
+              <button type="submit" disabled={loading} className="tv-focusable w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold disabled:opacity-50 hover:bg-primary/90 transition">
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Entrar como visitante
+              </button>
+              <p className="text-[10px] text-muted-foreground text-center pt-1">
+                Como visitante: sem compartilhar vídeos, sem conteúdo adulto, acesso por 1 dia.
+              </p>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-3 text-left">
             {mode === "verify" ? (
               <>
@@ -220,6 +260,7 @@ const LoginScreen: React.FC = () => {
               {mode === "login" ? "Entrar" : mode === "signup" ? "Enviar código" : "Verificar"}
             </button>
           </form>
+          )}
 
           {mode === "login" && (
             <>
