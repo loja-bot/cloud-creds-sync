@@ -80,8 +80,8 @@ const AppContent = () => {
     );
   }
 
-  // Age verification required
-  if (!ageVerification || !ageVerification.is_verified) {
+  // Age verification required (skipped for guest accounts)
+  if (!appUser?.is_guest && (!ageVerification || !ageVerification.is_verified)) {
     return <AgeVerificationScreen />;
   }
 
