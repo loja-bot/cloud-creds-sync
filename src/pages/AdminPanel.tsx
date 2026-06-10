@@ -342,6 +342,21 @@ const AdminPanel: React.FC = () => {
     setActionLoading("");
   };
 
+  const handleGenerateGuestToken = async () => {
+    setActionLoading("guest");
+    try {
+      const res = await adminApi("generate_guest_token", { username: guestUsername || undefined, hours: 24 });
+      if (res.token) {
+        setGuestTokenInfo({ token: res.token, username: res.username || guestUsername || "guest" });
+        await navigator.clipboard.writeText(res.token);
+        showToast("Token copiado! Válido por 24h");
+      } else {
+        showToast(res.error || "Erro ao gerar token");
+      }
+    } catch { showToast("Erro ao gerar token"); }
+    setActionLoading("");
+  };
+
   const formatDate = (d: string | null) => {
     if (!d) return "—";
     try { return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
