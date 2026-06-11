@@ -71,7 +71,13 @@ const AdminPanel: React.FC = () => {
   // Maintenance state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("Em manutenção");
+  const [maintenanceColor, setMaintenanceColor] = useState("#FBBF24");
+  const [maintenanceTitle, setMaintenanceTitle] = useState("EM CONSTRUÇÃO");
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+
+  // Popup state
+  const [popupCfg, setPopupCfg] = useState({ enabled: false, title: "Aviso", message: "", color: "#3B82F6", interval_minutes: 10 });
+  const [showPopupModal, setShowPopupModal] = useState(false);
 
   // Host state
   const [hostValue, setHostValue] = useState("");
@@ -117,19 +123,14 @@ const AdminPanel: React.FC = () => {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  // Fetch credentials for content search
+  // Fetch credentials for content search via secure edge function
   useEffect(() => {
     const fetchCreds = async () => {
-      const { data } = await supabase
-        .from("iptv_credentials")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        setCredentials({ host: data.host, username: data.username, password: data.password });
-      }
+      try {
+        const { data: resp } = await supabase.functions.invoke("get-iptv-credentials", { body: {} });
+        const d = (resp as { data?: { host: string; username: string; password: string } | null })?.data ?? null;
+        if (d) setCredentials({ host: d.host, username: d.username, password: d.password });
+      } catch (e) { console.error("admin creds error", e); }
     };
     fetchCreds();
   }, []);
@@ -163,14 +164,27 @@ const AdminPanel: React.FC = () => {
       if (res.data) {
         const maint = res.data.find((s: any) => s.key === "maintenance_mode");
         const host = res.data.find((s: any) => s.key === "default_host");
+        const popup = res.data.find((s: any) => s.key === "popup_config");
         if (maint?.value) {
           const val = typeof maint.value === "object" ? maint.value : JSON.parse(maint.value);
           setMaintenanceEnabled(val.enabled || false);
           setMaintenanceMsg(val.message || "Em manutenção");
+          setMaintenanceColor(val.color || "#FBBF24");
+          setMaintenanceTitle(val.title || "EM CONSTRUÇÃO");
         }
         if (host?.value) {
           const val = typeof host.value === "string" ? host.value : JSON.stringify(host.value);
           setHostValue(val.replace(/"/g, ""));
+        }
+        if (popup?.value && typeof popup.value === "object") {
+          const v = popup.value;
+          setPopupCfg({
+            enabled: !!v.enabled,
+            title: v.title || "Aviso",
+            message: v.message || "",
+            color: v.color || "#3B82F6",
+            interval_minutes: Number(v.interval_minutes) || 10,
+          });
         }
       }
     } catch {}
