@@ -393,57 +393,58 @@ const AdminPanel: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
-      {/* Sidebar */}
-      <aside className="w-[200px] min-w-[200px] h-screen border-r border-border/50 flex flex-col" style={{ background: "var(--gradient-surface)" }}>
-        <div className="p-4 pt-5">
-          <div className="flex items-center gap-2">
+    <div className="h-screen bg-background text-foreground flex overflow-hidden">
+      {/* Sidebar - collapses to icon-only on mobile */}
+      <aside className="w-14 sm:w-[200px] sm:min-w-[200px] h-screen border-r border-border/50 flex flex-col flex-shrink-0" style={{ background: "var(--gradient-surface)" }}>
+        <div className="p-2 sm:p-4 sm:pt-5">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
               <Tv className="w-4 h-4 text-primary" />
             </div>
-            <span className="font-display text-xs font-bold text-primary tracking-widest">ADMIN</span>
+            <span className="hidden sm:inline font-display text-xs font-bold text-primary tracking-widest">ADMIN</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-2 pt-2 space-y-1">
+        <nav className="flex-1 px-1 sm:px-2 pt-2 space-y-1">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all ${
+              title={tab.label}
+              className={`w-full flex items-center justify-center sm:justify-start gap-2.5 px-2 sm:px-3 py-2.5 rounded-lg text-sm transition-all ${
                 activeTab === tab.id
                   ? "bg-primary/10 text-primary border border-primary/20"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <tab.icon className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-3 border-t border-border/50">
-          <button onClick={() => navigate("/")} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
-            <ArrowLeft className="w-3 h-3" /> Voltar
+        <div className="p-2 sm:p-3 border-t border-border/50">
+          <button onClick={() => navigate("/")} title="Voltar" className="w-full flex items-center justify-center gap-2 px-2 sm:px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+            <ArrowLeft className="w-3 h-3 flex-shrink-0" /> <span className="hidden sm:inline">Voltar</span>
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
+      {/* Main content - scrollable with smooth touch */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
         {/* Header */}
-        <div className="border-b border-border/50 px-6 py-4 flex items-center justify-between">
-          <h1 className="font-display text-sm font-bold text-foreground tracking-widest">
-            {activeTab === "users" ? "GERENCIAR USUÁRIOS" : activeTab === "app" ? "GERENCIAR CONTEÚDO" : "GERENCIAR CATEGORIAS"}
+        <div className="sticky top-0 z-10 backdrop-blur bg-background/80 border-b border-border/50 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <h1 className="font-display text-xs sm:text-sm font-bold text-foreground tracking-widest truncate">
+            {activeTab === "users" ? "USUÁRIOS" : activeTab === "app" ? "CONTEÚDO" : "CATEGORIAS"}
           </h1>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { fetchSettings(); fetchBlockedData(); }} className="px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs hover:bg-secondary/80 transition-colors flex items-center gap-1">
-              <RefreshCw className="w-3 h-3" /> Atualizar
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => { fetchSettings(); fetchBlockedData(); }} className="px-2 sm:px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs hover:bg-secondary/80 transition-colors flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" /> <span className="hidden sm:inline">Atualizar</span>
             </button>
           </div>
         </div>
 
-        <div className="p-6 max-w-4xl">
+        <div className="p-3 sm:p-6 max-w-4xl pb-24">
           {/* USERS TAB */}
           {activeTab === "users" && (
             <div className="space-y-6">
