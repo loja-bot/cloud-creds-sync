@@ -328,10 +328,17 @@ const AdminPanel: React.FC = () => {
 
   const handleMaintenance = async () => {
     setActionLoading("maint");
-    await adminApi("set_maintenance", { enabled: !maintenanceEnabled, message: maintenanceMsg });
+    await adminApi("set_maintenance", { enabled: !maintenanceEnabled, message: maintenanceMsg, color: maintenanceColor, title: maintenanceTitle });
     setMaintenanceEnabled(!maintenanceEnabled);
     showToast(maintenanceEnabled ? "Manutenção desativada" : "Manutenção ativada");
     setShowMaintenanceModal(false); setActionLoading("");
+  };
+
+  const handleSavePopup = async () => {
+    setActionLoading("popup");
+    await adminApi("set_popup", popupCfg);
+    showToast(popupCfg.enabled ? "Pop-up ativado" : "Pop-up salvo");
+    setShowPopupModal(false); setActionLoading("");
   };
 
   const handleUpdateHost = async () => {
