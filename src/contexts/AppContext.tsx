@@ -339,6 +339,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signOut,
       maintenanceMode,
       maintenanceMessage,
+      maintenanceColor,
+      maintenanceTitle,
       ageVerification,
       ageVerificationLoading,
       refreshVerification: fetchVerification,
