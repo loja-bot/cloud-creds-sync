@@ -9,6 +9,8 @@ import FavoritesSection from "@/components/FavoritesSection";
 import ManualSection from "@/components/ManualSection";
 import VideoPlayer from "@/components/VideoPlayer";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
+import ConstructionScreen from "@/components/ConstructionScreen";
+import PopupNotifier from "@/components/PopupNotifier";
 import SplashScreen from "@/components/SplashScreen";
 import LoginScreen from "@/components/LoginScreen";
 import BannedScreen from "@/components/BannedScreen";
@@ -22,7 +24,7 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import { requestFullscreenAndLandscape, isStandalone } from "@/lib/pwa";
 
 const AppContent = () => {
-  const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage, ageVerification, ageVerificationLoading } = useApp();
+  const { section, loading, authUser, appUser, authLoading, maintenanceMode, maintenanceMessage, maintenanceColor, maintenanceTitle, ageVerification, ageVerificationLoading } = useApp();
   const [splashDone, setSplashDone] = useState(false);
 
   if (!splashDone) {
@@ -88,9 +90,9 @@ const AppContent = () => {
   // Keep playback mounted above maintenance/loading changes so background updates never freeze or close it.
   if (section === "player") return <VideoPlayer />;
 
-  // Admin-forced maintenance mode
+  // Admin-forced maintenance mode (yellow construction screen)
   if (maintenanceMode) {
-    return <MaintenanceScreen message={maintenanceMessage} />;
+    return <ConstructionScreen message={maintenanceMessage} color={maintenanceColor} title={maintenanceTitle} />;
   }
 
   // IPTV loading
@@ -123,6 +125,7 @@ const AppContent = () => {
       </main>
       <InstaWatermark />
       <SupportChat />
+      <PopupNotifier />
       <PwaInstallPrompt />
     </div>
   );
