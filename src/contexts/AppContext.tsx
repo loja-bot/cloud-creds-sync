@@ -51,6 +51,8 @@ interface AppContextType {
   signOut: () => void;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  maintenanceColor: string;
+  maintenanceTitle: string;
   ageVerification: AgeVerification | null;
   ageVerificationLoading: boolean;
   refreshVerification: () => void;
@@ -74,6 +76,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("Em manutenção");
+  const [maintenanceColor, setMaintenanceColor] = useState("#FBBF24");
+  const [maintenanceTitle, setMaintenanceTitle] = useState("EM CONSTRUÇÃO");
   const [ageVerification, setAgeVerification] = useState<AgeVerification | null>(null);
   const [ageVerificationLoading, setAgeVerificationLoading] = useState(true);
 
@@ -186,9 +190,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (data?.value && typeof data.value === "object" && "enabled" in data.value) {
-        const val = data.value as { enabled: boolean; message?: string };
+        const val = data.value as { enabled: boolean; message?: string; color?: string; title?: string };
         setMaintenanceMode(val.enabled);
         setMaintenanceMessage(val.message || "Em manutenção");
+        setMaintenanceColor(val.color || "#FBBF24");
+        setMaintenanceTitle(val.title || "EM CONSTRUÇÃO");
       }
     };
 
