@@ -33,8 +33,9 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({ message }) => {
       const { data, error } = await supabase.functions.invoke("refresh-playlist", { body: {} });
       if (error) throw error;
       if (data?.ok) {
-        toast.success("Nova playlist obtida!", { description: "Atualizando em instantes..." });
+        toast.success("Nova playlist obtida!", { description: "Recarregando..." });
         await refreshCredentials();
+        setTimeout(() => window.location.reload(), 800);
       } else if (data?.throttled) {
         if (manual) toast.info("Aguarde um momento e tente novamente.");
       } else {

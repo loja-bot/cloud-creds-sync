@@ -71,7 +71,13 @@ const AdminPanel: React.FC = () => {
   // Maintenance state
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("Em manutenção");
+  const [maintenanceColor, setMaintenanceColor] = useState("#FBBF24");
+  const [maintenanceTitle, setMaintenanceTitle] = useState("EM CONSTRUÇÃO");
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+
+  // Popup state
+  const [popupCfg, setPopupCfg] = useState({ enabled: false, title: "Aviso", message: "", color: "#3B82F6", interval_minutes: 10 });
+  const [showPopupModal, setShowPopupModal] = useState(false);
 
   // Host state
   const [hostValue, setHostValue] = useState("");
@@ -117,19 +123,14 @@ const AdminPanel: React.FC = () => {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  // Fetch credentials for content search
+  // Fetch credentials for content search via secure edge function
   useEffect(() => {
     const fetchCreds = async () => {
-      const { data } = await supabase
-        .from("iptv_credentials")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        setCredentials({ host: data.host, username: data.username, password: data.password });
-      }
+      try {
+        const { data: resp } = await supabase.functions.invoke("get-iptv-credentials", { body: {} });
+        const d = (resp as { data?: { host: string; username: string; password: string } | null })?.data ?? null;
+        if (d) setCredentials({ host: d.host, username: d.username, password: d.password });
+      } catch (e) { console.error("admin creds error", e); }
     };
     fetchCreds();
   }, []);
@@ -163,14 +164,27 @@ const AdminPanel: React.FC = () => {
       if (res.data) {
         const maint = res.data.find((s: any) => s.key === "maintenance_mode");
         const host = res.data.find((s: any) => s.key === "default_host");
+        const popup = res.data.find((s: any) => s.key === "popup_config");
         if (maint?.value) {
           const val = typeof maint.value === "object" ? maint.value : JSON.parse(maint.value);
           setMaintenanceEnabled(val.enabled || false);
           setMaintenanceMsg(val.message || "Em manutenção");
+          setMaintenanceColor(val.color || "#FBBF24");
+          setMaintenanceTitle(val.title || "EM CONSTRUÇÃO");
         }
         if (host?.value) {
           const val = typeof host.value === "string" ? host.value : JSON.stringify(host.value);
           setHostValue(val.replace(/"/g, ""));
+        }
+        if (popup?.value && typeof popup.value === "object") {
+          const v = popup.value;
+          setPopupCfg({
+            enabled: !!v.enabled,
+            title: v.title || "Aviso",
+            message: v.message || "",
+            color: v.color || "#3B82F6",
+            interval_minutes: Number(v.interval_minutes) || 10,
+          });
         }
       }
     } catch {}
@@ -314,10 +328,17 @@ const AdminPanel: React.FC = () => {
 
   const handleMaintenance = async () => {
     setActionLoading("maint");
-    await adminApi("set_maintenance", { enabled: !maintenanceEnabled, message: maintenanceMsg });
+    await adminApi("set_maintenance", { enabled: !maintenanceEnabled, message: maintenanceMsg, color: maintenanceColor, title: maintenanceTitle });
     setMaintenanceEnabled(!maintenanceEnabled);
     showToast(maintenanceEnabled ? "Manutenção desativada" : "Manutenção ativada");
     setShowMaintenanceModal(false); setActionLoading("");
+  };
+
+  const handleSavePopup = async () => {
+    setActionLoading("popup");
+    await adminApi("set_popup", popupCfg);
+    showToast(popupCfg.enabled ? "Pop-up ativado" : "Pop-up salvo");
+    setShowPopupModal(false); setActionLoading("");
   };
 
   const handleUpdateHost = async () => {
@@ -451,9 +472,10 @@ const AdminPanel: React.FC = () => {
               {/* Quick Actions */}
               <div className="space-y-3">
                 <h2 className="font-display text-xs font-bold text-muted-foreground tracking-widest">AÇÕES RÁPIDAS</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <QuickBtn icon={Users} label="LISTAR" color="bg-card border-primary/30 text-primary" onClick={fetchUsers} disabled={loading} />
                   <QuickBtn icon={Wrench} label={maintenanceEnabled ? "DESATIVAR" : "MANUTENÇÃO"} color={maintenanceEnabled ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-card border-accent/30 text-accent"} onClick={() => setShowMaintenanceModal(true)} />
+                  <QuickBtn icon={MessageSquare} label={popupCfg.enabled ? "POP-UP ON" : "POP-UP"} color={popupCfg.enabled ? "bg-primary/20 border-primary/40 text-primary" : "bg-card border-primary/30 text-primary"} onClick={() => setShowPopupModal(true)} />
                   <QuickBtn icon={Globe} label="HOST" color="bg-card border-blue-500/30 text-blue-400" onClick={() => setShowHostModal(true)} />
                   <QuickBtn icon={Link2} label="INSTALL LINK" color="bg-card border-primary/30 text-primary" onClick={handleGenerateInstallLink} disabled={actionLoading === "install"} />
                   <QuickBtn icon={UserPlus} label="GUEST TOKEN" color="bg-card border-yellow-500/30 text-yellow-500" onClick={() => { setGuestUsername(""); setGuestTokenInfo(null); setShowGuestModal(true); }} />
@@ -718,15 +740,70 @@ const AdminPanel: React.FC = () => {
       </Modal>
 
       <Modal open={showMaintenanceModal} onClose={() => setShowMaintenanceModal(false)}>
-        <h3 className="font-display text-sm font-bold text-accent tracking-wider">MANUTENÇÃO</h3>
+        <h3 className="font-display text-sm font-bold text-accent tracking-wider">MANUTENÇÃO (CONSTRUÇÃO 🚧)</h3>
         <p className="text-muted-foreground text-xs">Status: <span className={maintenanceEnabled ? "text-destructive" : "text-primary"}>{maintenanceEnabled ? "ATIVADA" : "DESATIVADA"}</span></p>
-        <input type="text" placeholder="Mensagem de manutenção" value={maintenanceMsg} onChange={(e) => setMaintenanceMsg(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-accent/50" />
+        <input type="text" placeholder="Título (ex: EM CONSTRUÇÃO)" value={maintenanceTitle} onChange={(e) => setMaintenanceTitle(e.target.value)}
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-accent/50" />
+        <textarea placeholder="Mensagem" value={maintenanceMsg} onChange={(e) => setMaintenanceMsg(e.target.value)} rows={2}
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-accent/50 resize-none" />
+        <div className="space-y-2">
+          <label className="text-[10px] text-muted-foreground tracking-widest">COR DE FUNDO</label>
+          <div className="flex gap-2 flex-wrap">
+            {["#FBBF24","#F59E0B","#EF4444","#3B82F6","#10B981","#8B5CF6","#EC4899","#1F2937"].map(c => (
+              <button key={c} type="button" onClick={() => setMaintenanceColor(c)}
+                className={`w-8 h-8 rounded-lg border-2 transition-all ${maintenanceColor === c ? "border-foreground scale-110" : "border-border"}`}
+                style={{ background: c }} aria-label={c} />
+            ))}
+            <input type="color" value={maintenanceColor} onChange={(e) => setMaintenanceColor(e.target.value)}
+              className="w-8 h-8 rounded-lg border border-border bg-transparent cursor-pointer" />
+          </div>
+        </div>
         <div className="flex gap-2">
           <button onClick={() => setShowMaintenanceModal(false)} className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancelar</button>
           <button onClick={handleMaintenance} disabled={actionLoading === "maint"}
             className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold disabled:opacity-50 ${maintenanceEnabled ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"}`}>
             {actionLoading === "maint" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (maintenanceEnabled ? "Desativar" : "Ativar")}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal open={showPopupModal} onClose={() => setShowPopupModal(false)}>
+        <h3 className="font-display text-sm font-bold text-primary tracking-wider">POP-UP DE AVISO</h3>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-muted-foreground flex-1">Ativado</label>
+          <button type="button" onClick={() => setPopupCfg(p => ({ ...p, enabled: !p.enabled }))}
+            className={`w-10 h-6 rounded-full transition-all ${popupCfg.enabled ? "bg-primary" : "bg-secondary"}`}>
+            <span className={`block w-5 h-5 rounded-full bg-background transition-all ${popupCfg.enabled ? "ml-5" : "ml-0.5"}`} />
+          </button>
+        </div>
+        <input type="text" placeholder="Título" value={popupCfg.title} onChange={(e) => setPopupCfg(p => ({ ...p, title: e.target.value }))}
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50" />
+        <textarea placeholder="Mensagem (aparece no canto pra todos)" value={popupCfg.message} onChange={(e) => setPopupCfg(p => ({ ...p, message: e.target.value }))} rows={3}
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50 resize-none" />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-muted-foreground tracking-widest">INTERVALO (min)</label>
+            <input type="number" min={1} max={1440} value={popupCfg.interval_minutes}
+              onChange={(e) => setPopupCfg(p => ({ ...p, interval_minutes: Math.max(1, Number(e.target.value) || 1) }))}
+              className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary/50" />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground tracking-widest">COR</label>
+            <div className="flex gap-1.5 flex-wrap mt-1">
+              {["#3B82F6","#10B981","#F59E0B","#EF4444","#8B5CF6","#EC4899"].map(c => (
+                <button key={c} type="button" onClick={() => setPopupCfg(p => ({ ...p, color: c }))}
+                  className={`w-7 h-7 rounded-md border-2 ${popupCfg.color === c ? "border-foreground scale-110" : "border-border"}`}
+                  style={{ background: c }} />
+              ))}
+              <input type="color" value={popupCfg.color} onChange={(e) => setPopupCfg(p => ({ ...p, color: e.target.value }))}
+                className="w-7 h-7 rounded-md border border-border bg-transparent cursor-pointer" />
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowPopupModal(false)} className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground text-sm font-medium">Cancelar</button>
+          <button onClick={handleSavePopup} disabled={actionLoading === "popup"} className="flex-1 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
+            {actionLoading === "popup" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Salvar"}
           </button>
         </div>
       </Modal>

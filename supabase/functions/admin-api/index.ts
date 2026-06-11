@@ -219,13 +219,36 @@ serve(async (req: Request) => {
 
     // --- TOGGLE MAINTENANCE ---
     if (action === "set_maintenance") {
-      const { enabled, message } = await req.json();
+      const { enabled, message, color, title } = await req.json();
       const sanitizedMsg = typeof message === "string" ? message.slice(0, 200) : "Em manutenção";
+      const sanitizedColor = typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#FBBF24";
+      const sanitizedTitle = typeof title === "string" ? title.slice(0, 60) : "EM CONSTRUÇÃO";
       const { error } = await supabase.from("app_settings").update({
-        value: { enabled: !!enabled, message: sanitizedMsg },
+        value: { enabled: !!enabled, message: sanitizedMsg, color: sanitizedColor, title: sanitizedTitle },
         updated_at: new Date().toISOString(),
       }).eq("key", "maintenance_mode");
       if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // --- SET POPUP ---
+    if (action === "set_popup") {
+      const body = await req.json();
+      const cfg = {
+        enabled: !!body.enabled,
+        title: (typeof body.title === "string" ? body.title : "Aviso").slice(0, 60),
+        message: (typeof body.message === "string" ? body.message : "").slice(0, 500),
+        color: typeof body.color === "string" && /^#[0-9a-fA-F]{6}$/.test(body.color) ? body.color : "#3B82F6",
+        interval_minutes: Math.max(1, Math.min(1440, Number(body.interval_minutes) || 10)),
+      };
+      const { data: existing } = await supabase.from("app_settings").select("id").eq("key", "popup_config").maybeSingle();
+      if (existing) {
+        const { error } = await supabase.from("app_settings").update({ value: cfg, updated_at: new Date().toISOString() }).eq("key", "popup_config");
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("app_settings").insert({ key: "popup_config", value: cfg, updated_at: new Date().toISOString() });
+        if (error) throw error;
+      }
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
